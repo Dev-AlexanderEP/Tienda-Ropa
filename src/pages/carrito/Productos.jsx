@@ -3,10 +3,10 @@ import PropTypes from "prop-types";
 import { IconButton, Typography, Input, Button   } from "@material-tailwind/react";
 import { Plus, Minus,Trash2  } from "lucide-react";
 import Swal from "sweetalert2";
-const API_URL = "http://127.0.0.1:8080/api/v1/carrito/";
-const API_ITEM_URL = "http://127.0.0.1:8080/api/v1/carrito-item/";
-const API_APLICAR = "http://localhost:8080/api/v1/aplicar";
-const API_USUARIO_ID = "http://127.0.0.1:8080/usuario-id";
+const API_URL = "https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/carrito/";
+const API_ITEM_URL = "https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/carrito-item/";
+const API_APLICAR = "https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/aplicar";
+const API_USUARIO_ID = "https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/usuario-id";
 
 const Productos = ({ carritoId, onNextStep, descuento, setDescuento , total, setTotal }) => {
   const [carrito, setCarrito] = useState(null);
@@ -76,6 +76,41 @@ const Productos = ({ carritoId, onNextStep, descuento, setDescuento , total, set
     });
 };
 
+const handleRestarUno = async (item) => {
+  if (item.cantidad <= 1) return;
+  try {
+    const res = await fetch(
+      `https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/sumar-uno?prendaId=${item.prenda.id}&tallaId=${item.talla.id}`,
+      { method: "PUT" }
+    );
+    const data = await res.json();
+    if (!res.ok || !data.object) {
+      Swal.fire("Sin stock", data.mensaje || "No hay stock suficiente.", "warning");
+      return;
+    }
+    handleChangeCantidad(item.id, item.cantidad - 1);
+  } catch (e) {
+    Swal.fire("Error", "No se pudo actualizar el stock.", "error");
+  }
+};
+
+const handleSumarUno = async (item) => {
+  try {
+    const res = await fetch(
+      `https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/restar-uno?prendaId=${item.prenda.id}&tallaId=${item.talla.id}`,
+      { method: "PUT" }
+    );
+    const data = await res.json();
+    if (!res.ok || !data.object) {
+      Swal.fire("Sin stock", data.mensaje || "No hay stock suficiente.", "warning");
+      return;
+    }
+    handleChangeCantidad(item.id, item.cantidad + 1);
+  } catch (e) {
+    Swal.fire("Error", "No se pudo actualizar el stock.", "error");
+  }
+};
+
 // Aplica el cupón de descuento
  const handleAplicarCupon = async () => {
     setAplicando(true);
@@ -141,35 +176,41 @@ const Productos = ({ carritoId, onNextStep, descuento, setDescuento , total, set
   if (loading) return <div>Cargando productos...</div>;
   if (!carrito) return <div>No se encontró el carrito.</div>;
 
-  const handleEliminarItem = (itemId) => {
-  Swal.fire({
-    title: "¿Eliminar producto?",
-    text: "¿Estás seguro de que deseas eliminar este producto del carrito?",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Sí, eliminar",
-    cancelButtonText: "Cancelar"
-  }).then(async (result) => {
-    if (result.isConfirmed) {
-      try {
-        const res = await fetch(`${API_ITEM_URL}${itemId}`, {
-          method: "DELETE",
-        });
-        if (!res.ok) throw new Error("No se pudo eliminar el producto");
-        // Actualiza la vista recargando el carrito
-        fetchCarrito();
-        Swal.fire("Eliminado", "El producto fue eliminado del carrito.", "success");
-      } catch (error) {
-        Swal.fire("Error", "No se pudo eliminar el producto.", "error");
+  const handleEliminarItem = (itemId, item) => {
+    Swal.fire({
+      title: "¿Eliminar producto?",
+      text: "¿Estás seguro de que deseas eliminar este producto del carrito?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar"
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          // 1. Sumar el stock al eliminar el item del carrito
+          await fetch(
+            `https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/sumar?prendaId=${item.prenda.id}&tallaId=${item.talla.id}&cantidad=${item.cantidad}`,
+            { method: "PUT" }
+          );
+          // 2. Eliminar el item del carrito
+          const res = await fetch(`${API_ITEM_URL}${itemId}`, {
+            method: "DELETE",
+          });
+          if (!res.ok) throw new Error("No se pudo eliminar el producto");
+          // Actualiza la vista recargando el carrito
+          fetchCarrito();
+          Swal.fire("Eliminado", "El producto fue eliminado del carrito.", "success");
+        } catch (error) {
+          Swal.fire("Error", "No se pudo eliminar el producto.", "error");
+        }
       }
-    }
-  });
-};
+    });
+  };
 
   return (
     <>
-        <div className="w-full mt-6 flex px-[10%] gap-10">
-            <div className="w-[65%]">
+        <div className="w-full mt-6 flex px-[10%] gap-10  max-xl:flex-col  max-md:px-[5%]">
+            <div className="w-[65%] max-xl:w-[100%] carrito-producto">
                 <table className="w-full text-left   ">
                     <thead>
                     <tr className="text-base font-semibold">
@@ -186,9 +227,9 @@ const Productos = ({ carritoId, onNextStep, descuento, setDescuento , total, set
                         <td className="py-4 border-b border-slate-600 ">
                             <div className="flex items-center flex-col gap-4">
                             <img
-                                src={`http://127.0.0.1:8080/${item.prenda.imagen.principal}`}
+                                src={`https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/${item.prenda.imagen.principal}`}
                                 alt={item.prenda.nombre}
-                                className="w-16 h-20 object-cover rounded"
+                                className="w-16 h-20 object-cover rounded max-sm:hidden"
                             />
                             <div>
                                 <div className="font-semibold">{item.prenda.nombre}</div>
@@ -218,14 +259,18 @@ const Productos = ({ carritoId, onNextStep, descuento, setDescuento , total, set
                         {/* Cantidad */}
                         <td className="py-4 border-b border-slate-600">
                             <div className="flex items-center gap-2 justify-center">
-                            <IconButton className="bg-gray-200 hover:bg-gray-100" size="sm"
-                                                    onClick={() => handleChangeCantidad(item.id, item.cantidad - 1)}
+                            <IconButton id={item.prenda.nombre + "-restar"} className="bg-gray-200 hover:bg-gray-100" size="sm"
+                                                    onClick={() => {
+                                                      handleRestarUno(item);
+                                                    }}
 >
                                 <Minus className="h-4 w-4 stroke-2 stroke-black" />
                             </IconButton>
                             <span className="w-8 text-center">{item.cantidad}</span>
-                            <IconButton className="bg-gray-200 hover:bg-gray-100" size="sm"
-                                                    onClick={() => handleChangeCantidad(item.id, item.cantidad + 1)}
+                            <IconButton id={item.prenda.nombre + "-sumar"} className="bg-gray-200 hover:bg-gray-100" size="sm"
+                                                    onClick={() => {
+                              handleSumarUno(item);
+                            }}
 >
                                 <Plus className="h-4 w-4 stroke-2 stroke-black" />
                             </IconButton>
@@ -240,7 +285,8 @@ const Productos = ({ carritoId, onNextStep, descuento, setDescuento , total, set
                         <td className="py-4 border-b border-slate-600  text-center cursor-pointer ">
                           <Trash2
                             className="stroke-red-600 w-8 h-18"
-                            onClick={() => handleEliminarItem(item.id)}
+                            id={item.prenda.nombre + "-borrar"}
+                              onClick={() => handleEliminarItem(item.id, item)}
                           />
                         </td>
                         </tr>
@@ -249,16 +295,17 @@ const Productos = ({ carritoId, onNextStep, descuento, setDescuento , total, set
                 </table>
 
             </div>
-            <div className="w-[35%] h-[400px] flex flex-col justify-start items-center">
+            <div className="w-[35%] h-[400px] flex flex-col justify-start items-center max-xl:w-[100%] max-xl:h-auto">
   <div className="w-full mbg-white rounded-lg shadow p-5 mt-2">
     {/* Cupón */}
         <div className="flex mb-4">
             <Input
+              id="cupon"
               type="text"
               placeholder="Cupón de descuento"
               value={cupon}
               onChange={e => setCupon(e.target.value)}
-              className="rounded-none rounded-l border border-black"
+              className="rounded-none rounded-l "
               labelProps={{
                 className: "hidden",
               }}
@@ -269,6 +316,7 @@ const Productos = ({ carritoId, onNextStep, descuento, setDescuento , total, set
             />
             <Button
               className="rounded-none rounded-r px-5 py-2 font-semibold bg-black text-white hover:bg-gray-900"
+              id="btn-aplicar-cupon"
               onClick={handleAplicarCupon}
               disabled={aplicando || !cupon}
             >
@@ -302,6 +350,7 @@ const Productos = ({ carritoId, onNextStep, descuento, setDescuento , total, set
       </div>
      <Button
         variant="outline"
+        id="ir-a-comprar"
         className="w-full border border-red-500 text-black hover:bg-red-500 hover:text-white font-bold py-3 rounded text-lg transition"
         onClick={onNextStep}
       >

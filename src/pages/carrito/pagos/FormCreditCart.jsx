@@ -16,6 +16,9 @@ const FormCreditCart = ({ amount, ventaId, metodoId, carritoId, datos }) => {
     ccv: "",
   });
 
+  // Nuevo estado para guardar el envioId
+  const [envioId, setEnvioId] = useState(null);
+
   const handleChange = e => {
     const { name, value } = e.target;
     // Formatear el número de tarjeta con separación cada 4 dígitos
@@ -37,42 +40,49 @@ const FormCreditCart = ({ amount, ventaId, metodoId, carritoId, datos }) => {
   const handleSubmit = async e => {
     e.preventDefault();
     try {
-      // Registrar el pago antes de mostrar el mensaje
-      // await axios.post("http://localhost:8080/api/v1/pago", {
-      //   ventaId,
-      //   monto: amount,
-      //   metodoId,
-      //   estado: "PAGADO"
-      // });
-      
-      
-      const pagoData = {
-      ventaId,
-      monto: amount,
-      metodoId,
-      estado: "PAGADO"
-    };
-    console.log("Enviando pago:", pagoData);
-    const response = await axios.post("http://localhost:8080/api/v1/pago", pagoData);
-    console.log("Respuesta del backend:", response.data);
-
-    
+      // Mostrar loading mientras se procesa el pago y se envía el correo
       Swal.fire({
-        icon: "success",
-        title: "Pago con éxito",
-        html: `<b>${form.name}</b><br>Monto: <b>S/ ${amount}</b>`,
-        confirmButtonText: "OK",
+        title: "Procesando pago...",
+        text: "Por favor, espera mientras procesamos tu pago y enviamos los detalles a tu correo.",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
       });
-      actualizarVentaPagada();
-      actualizarCarrito();
-      registrarDatosPersonalesYEnvio();
+
+      // --- 1. Registrar el pago ---
+      const pagoData = {
+        ventaId,
+        monto: amount,
+        metodoId,
+        estado: "PAGADO"
+      };
+      await axios.post("https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/pago", pagoData);
+
+      // --- 2. Actualizar venta ---
+      await actualizarVentaPagada();
+
+      // --- 3. Actualizar carrito ---
+      await actualizarCarrito();
+
+      // --- 4. Registrar datos personales y envío (y guardar envioId) ---
+      const nuevoEnvioId = await registrarDatosPersonalesYEnvio(); // <- ahora retorna el envioId
+      setEnvioId(nuevoEnvioId);
+
+      // --- 5. Guardar dirección si es necesario ---
       if (datos.guardarData1 && datos.guardarData2) {
-        guardarDireccionSiEsNecesario();
+        await guardarDireccionSiEsNecesario();
       }
+
+      // --- 6. Enviar correo con detalles de la compra (nuevo paso) ---
+      // Llamar a tu API para enviar el correo (espera a que termine)
+      await enviarCorreoConDetalle(nuevoEnvioId);
+
       // Limpiar carritoId y cartCount del localStorage
       localStorage.removeItem('carritoId');
       localStorage.setItem('cartCount', '0');
       window.dispatchEvent(new Event('cart-updated'));
+
       // Limpiar el formulario después del pago exitoso
       setForm({
         name: "",
@@ -81,6 +91,15 @@ const FormCreditCart = ({ amount, ventaId, metodoId, carritoId, datos }) => {
         year: "",
         ccv: "",
       });
+
+      // Mostrar mensaje de éxito y pedir revisar correo
+      Swal.fire({
+        icon: "success",
+        title: "Pago con éxito",
+        html: `<b>${form.name}</b><br>Monto: <b>S/ ${amount}</b><br><br><b>Revisa tu correo por favor</b>`,
+        confirmButtonText: "OK",
+      });
+
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -90,138 +109,148 @@ const FormCreditCart = ({ amount, ventaId, metodoId, carritoId, datos }) => {
     }
   };
 
-
-  
-const actualizarVentaPagada = async () => {
-  try {
-    const token = localStorage.getItem("accessToken");
-    // 1. Obtener usuarioId
-    const userRes = await axios.get("http://127.0.0.1:8080/usuario-id", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const usuarioId = userRes.data;
-
-    // 2. Obtener la venta pendiente
-    const ventaPendienteRes = await axios.get(`http://localhost:8080/api/v1/venta/segunda-pendiente/${usuarioId}`);
-    const ventaId = ventaPendienteRes.data.object;
-
-    // 3. Actualizar la venta a PAGADO
-    await axios.put(`http://localhost:8080/api/v1/venta/${ventaId}`, {
-      id: ventaId,
-      usuarioId,
-      estado: "PAGADO"
-    });
-
-    // Aquí puedes mostrar un mensaje de éxito o continuar el flujo
-    // Swal.fire("Venta actualizada", "La venta fue marcada como PAGADO", "success");
-  } catch (error) {
-    Swal.fire("Error", "No se pudo actualizar la venta a PAGADO", "error");
-    console.error(error);
-  }
-};
-
-const actualizarCarrito = async () => {
-  try {
-    const token = localStorage.getItem("accessToken");
-    // 1. Obtener usuarioId
-    const userRes = await axios.get("http://127.0.0.1:8080/usuario-id", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const usuarioId = userRes.data;
-    await axios.put(`http://localhost:8080/api/v1/carrito/${carritoId}`, {
-      usuarioId,
-      estado: "COMPLETADO"
-    });
-    // Opcional: mensaje de éxito
-    // Swal.fire("Carrito actualizado", "El carrito fue marcado como COMPLETADO", "success");
-  } catch (error) {
-    Swal.fire("Error", "No se pudo actualizar el carrito a COMPLETADO", "error");
-    console.error(error);
-  }
-};
-
-const registrarDatosPersonalesYEnvio = async () => {
-  try {
-    // 1. Obtener usuarioId
-    const token = localStorage.getItem("accessToken");
-    const userRes = await axios.get("http://127.0.0.1:8080/usuario-id", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const usuarioId = userRes.data;
-
-    // 2. Registrar datos personales
-    const datosPersonalesBody = {
-      nombres: datos.nombre,
-      apellidos: datos.apellidos,
-      usuarioId,
-      dni: datos.documento,
-      departamento: datos.departamento,
-      provincia: datos.provincia,
-      distrito: datos.distrito,
-      calle: datos.calle,
-      detalle: datos.detalle,
-      telefono: datos.telefono,
-    };
-    const datosPersonalesRes = await axios.post("http://localhost:8080/api/v1/dato-personal", datosPersonalesBody);
-    const datosPersonalesId = datosPersonalesRes.data.object.id;
-
-    // 3. Registrar envío
-    // Fechas: inicio y fin de mes actual
-    const now = new Date();
-    const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
-    const finMes = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
-
-    // Tracking aleatorio
-    const randomTracking = Array.from({ length: 10 }, () =>
-      Math.random() < 0.5
-        ? String.fromCharCode(65 + Math.floor(Math.random() * 26)) // A-Z
-        : Math.floor(Math.random() * 9) + 1 // 1-9
-    ).join("");
-
-    const envioBody = {
-      ventaId,
-      datosPersonalesId,
-      costoEnvio: 0,
-      fechaEnvio: inicioMes,
-      fechaEntrega: finMes,
-      estado: "EN PROCESO",
-      metodoEnvio: "Delivery",
-      trackingNumber: randomTracking,
-    };
-    await axios.post("http://localhost:8080/api/v1/envio", envioBody);
-
-    // Opcional: mensaje de éxito
-    // Swal.fire("Envío registrado", "Datos personales y envío guardados correctamente", "success");
-  } catch (error) {
-    Swal.fire("Error", "No se pudo registrar los datos personales y el envío", "error");
-    console.error(error);
-  }
-};
-
-const guardarDireccionSiEsNecesario = async () => {
-    // Solo guarda si ambos flags están en true
+  // --- Funciones auxiliares (no cambian) ---
+  const actualizarVentaPagada = async () => {
+    try {
       const token = localStorage.getItem("accessToken");
       // 1. Obtener usuarioId
-      const userRes = await axios.get("http://127.0.0.1:8080/usuario-id", {
+      const userRes = await axios.get("https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/usuario-id", {
         headers: { Authorization: `Bearer ${token}` }
       });
       const usuarioId = userRes.data;
-      // 2. Construir el body de la dirección
-      const direccionBody = {
+
+      // 2. Obtener la venta pendiente
+      const ventaPendienteRes = await axios.get(`https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/venta/segunda-pendiente/${usuarioId}`);
+      const ventaId = ventaPendienteRes.data.object;
+
+      // 3. Actualizar la venta a PAGADO
+      await axios.put(`https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/venta/${ventaId}`, {
+        id: ventaId,
+        usuarioId,
+        estado: "PAGADO"
+      });
+    } catch (error) {
+      Swal.fire("Error", "No se pudo actualizar la venta a PAGADO", "error");
+      console.error(error);
+    }
+  };
+
+  const actualizarCarrito = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      // 1. Obtener usuarioId
+      const userRes = await axios.get("https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/usuario-id", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const usuarioId = userRes.data;
+      await axios.put(`https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/carrito/${carritoId}`, {
+        usuarioId,
+        estado: "COMPLETADO"
+      });
+    } catch (error) {
+      Swal.fire("Error", "No se pudo actualizar el carrito a COMPLETADO", "error");
+      console.error(error);
+    }
+  };
+
+  // --- Cambiada: ahora retorna el envioId creado ---
+  const registrarDatosPersonalesYEnvio = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const userRes = await axios.get("https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/usuario-id", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const usuarioId = userRes.data;
+
+      // 2. Registrar datos personales
+      const datosPersonalesBody = {
         nombres: datos.nombre,
         apellidos: datos.apellidos,
         usuarioId,
         dni: datos.documento,
         departamento: datos.departamento,
         provincia: datos.provincia,
-        calle: datos.calle,
         distrito: datos.distrito,
+        calle: datos.calle,
         detalle: datos.detalle,
         telefono: datos.telefono,
+        email: datos.correo,
       };
-      // 3. Guardar la dirección
-      await axios.post("http://localhost:8080/api/v1/direccion", direccionBody);
-};
+      const datosPersonalesRes = await axios.post("https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/dato-personal", datosPersonalesBody);
+      const datosPersonalesId = datosPersonalesRes.data.object.id;
+
+      // Fechas: inicio y fin de mes actual
+      const now = new Date();
+      const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+      const finMes = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
+
+      // Tracking aleatorio
+      const randomTracking = Array.from({ length: 10 }, () =>
+        Math.random() < 0.5
+          ? String.fromCharCode(65 + Math.floor(Math.random() * 26)) // A-Z
+          : Math.floor(Math.random() * 9) + 1 // 1-9
+      ).join("");
+
+      const envioBody = {
+        ventaId,
+        datosPersonalesId,
+        costoEnvio: 0,
+        fechaEnvio: inicioMes,
+        fechaEntrega: finMes,
+        estado: "EN PROCESO",
+        metodoEnvio: "Delivery",
+        trackingNumber: randomTracking,
+      };
+      // Guardamos el envio y retornamos el id del envio creado
+      const envioRes = await axios.post("https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/envio", envioBody);
+      // Asegúrate de que el backend retorna el id en envioRes.data.object.id
+      const envioIdCreado = envioRes.data.object.id;
+      return envioIdCreado;
+
+    } catch (error) {
+      Swal.fire("Error", "No se pudo registrar los datos personales y el envío", "error");
+      console.error(error);
+      return null;
+    }
+  };
+
+  const guardarDireccionSiEsNecesario = async () => {
+    const token = localStorage.getItem("accessToken");
+    // 1. Obtener usuarioId
+    const userRes = await axios.get("https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/usuario-id", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const usuarioId = userRes.data;
+    // 2. Construir el body de la dirección
+    const direccionBody = {
+      nombres: datos.nombre,
+      apellidos: datos.apellidos,
+      usuarioId,
+      dni: datos.documento,
+      departamento: datos.departamento,
+      provincia: datos.provincia,
+      calle: datos.calle,
+      distrito: datos.distrito,
+      detalle: datos.detalle,
+      telefono: datos.telefono,
+    };
+    // 3. Guardar la dirección
+    await axios.post("https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/direccion", direccionBody);
+  };
+
+  // Cambiada: recibe envioId por parámetro
+  const enviarCorreoConDetalle = async (envioIdParam) => {
+    if (!envioIdParam) {
+      console.error("envioId no está definido, no se puede enviar el correo.");
+      return;
+    }
+    try {
+      await axios.get(`https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/registrar?id=${envioIdParam}`);
+    } catch (error) {
+      // Si el envío del correo falla, solo muestra un error en consola
+      console.error("Error al enviar el correo:", error);
+    }
+  };
 
   return (
     <form className="flex flex-col gap-4 w-full mt-5 p-4 bg-white rounded shadow" onSubmit={handleSubmit}>
@@ -302,7 +331,7 @@ const guardarDireccionSiEsNecesario = async () => {
           />
         </div>
       </div>
-      <Button type="submit" color="blue" className="mt-2">Pagar</Button>
+      <Button type="submit" id="pagar" color="blue" className="mt-2">Pagar</Button>
     </form>
   );
 };

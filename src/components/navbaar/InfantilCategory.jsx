@@ -12,7 +12,7 @@ const InfantilCategory = ({
     <div className="flex">
 
       {/* ninias */}
-      <div className="w-[40%] h-full ">
+      <div className="w-[40%] h-full max-lg:w-[50%]">
         <Typography className="font-semibold ">Ninias</Typography>
         {/* Iterar el arreglo ninias */}
         <div className="w-full text-gray-600 grid grid-cols-2 gap-y-1 mt-2">
@@ -25,7 +25,7 @@ const InfantilCategory = ({
       </div>
 
       {/* ninios */}
-      <div className="w-[40%] h-full  ">
+      <div className="w-[40%] h-full  max-lg:w-[50%]">
 
         <div className="w-[100%]  ">
           <Typography className="font-semibold">Niños</Typography>
@@ -53,7 +53,7 @@ const InfantilCategory = ({
       </div>
 
       {/* Imágenes */}  
-      <div className="w-[40%] h-full flex items-center justify-center gap-4 ">
+      <div className="w-[40%] h-full flex items-center justify-center gap-4 max-lg:hidden">
         {/* Iterar el arreglo imag para mostrar imágenes */}
         {img.map((img, idx) => (
           <img src={img} alt="" key={idx} className="w-[45%] object-cover" />

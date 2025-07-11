@@ -2,17 +2,22 @@ import * as React from "react";
 import { Collapse, List, Checkbox, Card, Typography, Select  } from "@material-tailwind/react";
 import { useParams } from "react-router-dom";
 import {  ChevronDown  } from 'lucide-react';
+import WhatsAppButton from "../../components/contact/WhatsAppButton";
+import { Search } from "lucide-react";
 
 import Navbar from "../../components/navbaar/NavBar";
-
+import NavBarResponsive from "../../components/navbaar/NavBarResponsive";
+import { AnimatePresence, motion } from "framer-motion";
 
 const FilterPage = () => {
-   // ...otros imports y estados...
+    // ...otros imports y estados...
 
+    const [isOpenFilters, setIsOpenFilters] = React.useState(false);
 const [selectedTalla, setSelectedTalla] = React.useState("");
 const [selectedMarca, setSelectedMarca] = React.useState("");
 const [selectedPrecio, setSelectedPrecio] = React.useState("");
 const [selectedDescuento, setSelectedDescuento] = React.useState("");
+const [busqueda, setBusqueda] = React.useState("");
 
 
 
@@ -34,6 +39,7 @@ const [rangosDescuentos, setRangosDescuentos] = React.useState([]);
   const [tallas, setTallas] = React.useState([]);
   const [marcas, setMarcas] = React.useState([]);
   const { categoria } = useParams();
+const genero = window.location.pathname.split("/")[1]; // Esto te da "mujer"
 
 
 const handleSingleSelect = (value, setSelected) => (event) => {
@@ -76,7 +82,7 @@ React.useEffect(() => {
       }
 
       // Llama a la API con los parámetros construidos
-      const res = await fetch(`http://127.0.0.1:8080/api/v1/prendas-filtradas?${params.toString()}`);
+      const res = await fetch(`https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/prendas-filtradas?${params.toString()}`);
       const data = await res.json();
 
       // Actualiza el estado con los productos obtenidos
@@ -100,23 +106,23 @@ React.useEffect(() => {
 
   React.useEffect(() => {
 
-    if (categoria) {
+    if (categoria && genero) {
         
-      fetch(`http://127.0.0.1:8080/api/v1/prenda-tallas/${categoria}`)
+      fetch(`https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/prenda-tallas/${categoria}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.object) setTallas(data.object);
         })
         .catch(() => setTallas([]));
 
-      fetch(`http://127.0.0.1:8080/api/v1/prenda-marcas/${categoria}`)
+      fetch(`https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/prenda-marcas/${categoria}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.object) setMarcas(data.object);
         })
         .catch(() => setMarcas([]));
 
-                fetch(`http://127.0.0.1:8080/api/v1/prenda-precios/${categoria}`)
+                fetch(`https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/prenda-precios/${categoria}`)
           .then((res) => res.json())
           .then((data) => {
             if (data.object && Array.isArray(data.object[0])) {
@@ -141,20 +147,20 @@ React.useEffect(() => {
           .catch(() => setRangosPrecios([]));
 
 
-          fetch(`http://127.0.0.1:8080/api/v1/prendas/descuentos-aplicados/${categoria}`)
-  .then((res) => res.json())
-  .then((data) => {
-    if (data.object) setProductos(data.object);
-    console.log(data)
-  })
-  .catch(() => setProductos([]));
-    }
-  }, [categoria]);
+          fetch(`https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/prendas/descuentos-aplicados?categoria=${categoria}&genero=${genero}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.object) setProductos(data.object);
+        console.log(data);
+      })
+      .catch(() => setProductos([]));
+  }
+}, [categoria, genero]);
 
   // 3. Agrega este List.Item y Collapse donde quieras mostrar el filtro de descuentos
   React.useEffect(() => {
     if (categoria) {
-      fetch(`http://127.0.0.1:8080/api/v1/prendas/todos-descuentos/${categoria}`)
+      fetch(`https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/prendas/todos-descuentos/${categoria}`)
         .then((res) => res.json())
         .then((data) => {
           // Suponiendo que data.object es un array de descuentos aplicados
@@ -177,195 +183,530 @@ React.useEffect(() => {
     }
   }, [categoria]);
 
-  const url = "http://127.0.0.1:8080/";
+// Debounce para evitar demasiadas peticiones
+React.useEffect(() => {
+  const query = busqueda.trim();
+  if (!query) {
+    fetch(`https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/prendas/descuentos-aplicados?categoria=${categoria}&genero=${genero}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) setProductos(data);
+        else if (data && data.object) setProductos(data.object);
+        else setProductos([]);
+      })
+      .catch(() => setProductos([]));
+    return; // Importante: salir del useEffect para no buscar por nombre
+  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => {
+    const params = new URLSearchParams({
+      nombre: query,
+      categoria: categoria,
+      genero: genero,
+    });
+    fetch(`https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/prendas/buscar?${params.toString()}`, {
+      signal: controller.signal,
+    })
+      .then(res => res.json())
+      .then(data => {
+  console.log("Respuesta de backend:", data);
+  if (Array.isArray(data)) setProductos(data);
+  else if (data && data.object && Array.isArray(data.object)) setProductos(data.object);
+  else setProductos([]);
+})
+      .catch(error => {
+        if (error.name !== "AbortError") setProductos([]);
+      });
+  }, 350);
+  return () => {
+    clearTimeout(timeout);
+    controller.abort();
+  };
+}, [busqueda, categoria, genero]);
+
+  const url = "https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/";
     return (
       <div className="w-full flex flex-col gap-5">
-        <Navbar />
-        <div className=" w-full px-[100px] flex justify-center">
+        <WhatsAppButton />
+
+        <NavBarResponsive />
+        <div className=" w-full px-[100px]  flex justify-center max-lg:px-[20px]">
             
             {/* parte derecha */}
-            <div className=" w-[250px] ">
-                <List>
-                    {/* categorias */}
+            <div className="w-[250px] max-lg:hidden">
+                <List >
+                    {/* CATEGORIAS */}
                     <div className="border-b border-gray-300 p-1">
-                        <List.Item onClick={() => setIsOpenCategorias((cur) => !cur)}>
-                            <div className="flex justify-between w-full">
-                                <Typography variant="" className="font-semibold">
-                                    Categorias  
-                                </Typography>
-                                <ChevronDown className="w-5 h-5 cursor-pointer" />
-                            </div>
-                        </List.Item>
-                        <Collapse open={isOpenCategorias}>
-                            <List className=" pb-2">
-                                <List.Item  >
+                    <List.Item onClick={() => setIsOpenCategorias((cur) => !cur)}>
+                        <div className="flex justify-between w-full">
+                        <Typography className="font-semibold">Categorias</Typography>
+                        <ChevronDown className="w-5 h-5 cursor-pointer" />
+                        </div>
+                    </List.Item>
+                    <AnimatePresence initial={false}>
+                        {isOpenCategorias && (
+                        <motion.div
+                            key="categorias"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.23, ease: "easeInOut" }}
+                            style={{ overflow: "hidden" }}
+                        >
+                            <List className="pb-2">
+                            <List.Item>
                                 <Checkbox id={categoria}>
-                                    <Checkbox.Indicator />
+                                <Checkbox.Indicator />
                                 </Checkbox>
                                 {categoria}
-                                </List.Item>
+                            </List.Item>
                             </List>
-                        </Collapse>
+                        </motion.div>
+                        )}
+                    </AnimatePresence>
                     </div>
 
-                    {/* Tallas */}
+                    {/* TALLAS */}
                     <div className="border-b border-gray-300 p-1">
-                         <List.Item onClick={() => setIsOpenTallas((cur) => !cur)}>
-                                <div className="flex justify-between w-full">
-                                    <Typography variant="" className="font-semibold">
-                                        Tallas
+                    <List.Item id="tallas" onClick={() => setIsOpenTallas((cur) => !cur)}>
+                        <div className="flex justify-between w-full">
+                        <Typography className="font-semibold">Tallas</Typography>
+                        <ChevronDown className="w-5 h-5 cursor-pointer" />
+                        </div>
+                    </List.Item>
+                    <AnimatePresence initial={false}>
+                        {isOpenTallas && (
+                        <motion.div
+                            key="tallas"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.23, ease: "easeInOut" }}
+                            style={{ overflow: "hidden" }}
+                        >
+                            <List className="pb-2">
+                            {tallas.map((talla, idx) => (
+                                <List.Item key={idx}>
+                                <label className="flex gap-2 items-center justify-center">
+                                    <input
+                                    type="checkbox"
+                                    id={talla}
+                                    className="w-4 h-4 accent-indigo-600 rounded border-gray-300"
+                                    checked={selectedTalla === talla}
+                                    onChange={() =>
+                                        setSelectedTalla(selectedTalla === talla ? "" : talla)
+                                    }
+                                    />
+                                    <Typography className="text-[14px] leading-none">
+                                    {talla}
                                     </Typography>
-                                    <ChevronDown className="w-5 h-5 cursor-pointer" />  
-                                </div>
-                        </List.Item>
-                        <Collapse open={isOpenTallas}>
-                            <List className=" pb-2">
-                                {tallas.map((talla, idx) => (
-                                <List.Item key={idx}>
-                                    <label className=" flex gap-2 items-center justify-center     ">
-                                        <input
-                                        type="checkbox"
-                                        className="w-4 h-4 accent-indigo-600 rounded border-gray-300 " 
-                                        checked={selectedTalla === talla}
-                                        onChange={() => setSelectedTalla(selectedTalla === talla ? "" : talla)}
-                                        />
-                                        <Typography variant="" className="text-[14px] leading-none ">
-                                            {talla}
-                                        </Typography>
-                                    </label>
+                                </label>
                                 </List.Item>
-                                ))}
+                            ))}
                             </List>
-                        </Collapse>
+                        </motion.div>
+                        )}
+                    </AnimatePresence>
                     </div>
 
-                    {/* Marcas */}
+                    {/* MARCAS */}
                     <div className="border-b border-gray-300 p-1">
-                        <List.Item onClick={() => setIsOpenMarcas((cur) => !cur)}>
-                                <div className="flex justify-between w-full">
-                                    <Typography variant="" className="font-semibold">
-                                        Marcas
+                    <List.Item id="marcas" onClick={() => setIsOpenMarcas((cur) => !cur)}>
+                        <div className="flex justify-between w-full">
+                        <Typography className="font-semibold">Marcas</Typography>
+                        <ChevronDown className="w-5 h-5 cursor-pointer" />
+                        </div>
+                    </List.Item>
+                    <AnimatePresence initial={false}>
+                        {isOpenMarcas && (
+                        <motion.div
+                            key="marcas"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.23, ease: "easeInOut" }}
+                            style={{ overflow: "hidden" }}
+                        >
+                            <List>
+                            {marcas.map((marca, idx) => (
+                                <List.Item key={idx}>
+                                <label className="flex gap-2 items-center justify-center">
+                                    <input
+                                    id={marca}
+                                    type="checkbox"
+                                    className="w-4 h-4 accent-indigo-600 rounded border-gray-300"
+                                    checked={selectedMarca === marca}
+                                    onChange={() =>
+                                        setSelectedMarca(selectedMarca === marca ? "" : marca)
+                                    }
+                                    />
+                                    <Typography className="text-[14px] leading-none">
+                                    {marca}
                                     </Typography>
-                                    <ChevronDown className="w-5 h-5 cursor-pointer" />
-                                </div>
-                        </List.Item>
-                        <Collapse open={isOpenMarcas}>
-                            <List>
-                                {marcas.map((marca, idx) => (
-                                <List.Item key={idx}>
-                                    <label  className=" flex gap-2 items-center justify-center ">
-                                        <input
-                                            type="checkbox"
-                                            className="w-4 h-4 accent-indigo-600 rounded border-gray-300 " 
-
-                                            checked={selectedMarca === marca}
-                                            onChange={() => setSelectedMarca(selectedMarca === marca ? "" : marca)}
-                                        />
-                                        <Typography variant="" className="text-[14px] leading-none ">
-                                            {marca}
-                                        </Typography>
-                                    </label>
+                                </label>
                                 </List.Item>
-                                ))}
+                            ))}
                             </List>
-                        </Collapse>
+                        </motion.div>
+                        )}
+                    </AnimatePresence>
                     </div>
 
-                    {/* Precio */}
+                    {/* PRECIO */}
                     <div className="border-b border-gray-300 p-1">
-                        <List.Item onClick={() => setIsOpenPrecios((cur) => !cur)}>
-                            <div className="flex justify-between w-full">
-                                <Typography variant="" className="font-semibold">
-                                    Precio
-                                </Typography>
-                                <ChevronDown className="w-5 h-5 cursor-pointer" />                       
-                            </div>
-                        </List.Item>
-                        <Collapse open={isOpenPrecios}>
+                    <List.Item onClick={() => setIsOpenPrecios((cur) => !cur)}>
+                        <div className="flex justify-between w-full">
+                        <Typography className="font-semibold">Precio</Typography>
+                        <ChevronDown className="w-5 h-5 cursor-pointer" />
+                        </div>
+                    </List.Item>
+                    <AnimatePresence initial={false}>
+                        {isOpenPrecios && (
+                        <motion.div
+                            key="precios"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.23, ease: "easeInOut" }}
+                            style={{ overflow: "hidden" }}
+                        >
                             <List>
-                                {rangosPrecios.map((rango, idx) => (
+                            {rangosPrecios.map((rango, idx) => (
                                 <List.Item key={idx}>
-                                    <label  className=" flex gap-2 items-center justify-center ">
-                                        <input
-                                            type="checkbox"
-                                            className="w-4 h-4 accent-indigo-600 rounded border-gray-300 " 
-                                            checked={selectedPrecio === rango.label}
-                                            onChange={() => setSelectedPrecio(selectedPrecio === rango.label ? "" : rango.label)}
-                                        />
-                                        <Typography variant="" className="text-[14px] leading-none ">
-                                            {rango.label}
-                                        </Typography>
-                                    </label>
+                                <label className="flex gap-2 items-center justify-center">
+                                    <input
+                                    type="checkbox"
+                                    className="w-4 h-4 accent-indigo-600 rounded border-gray-300"
+                                    checked={selectedPrecio === rango.label}
+                                    onChange={() =>
+                                        setSelectedPrecio(
+                                        selectedPrecio === rango.label ? "" : rango.label
+                                        )
+                                    }
+                                    />
+                                    <Typography className="text-[14px] leading-none">
+                                    {rango.label}
+                                    </Typography>
+                                </label>
                                 </List.Item>
-                                ))}
+                            ))}
                             </List>
-                        </Collapse>
+                        </motion.div>
+                        )}
+                    </AnimatePresence>
                     </div>
 
-                    {/* Descuento */}
+                    {/* DESCUENTO */}
                     <div className="border-b border-gray-300 p-1">
-                        <List.Item onClick={() => setIsOpenDescuentos((cur) => !cur)}>
-                            <div className="flex justify-between w-full">
-                                <Typography variant="" className="font-semibold">
-                                    Descuento
-                                </Typography>
-                                <ChevronDown className="w-5 h-5 cursor-pointer" />                        
-                            </div>
-                        </List.Item>
-                        <Collapse open={isOpenDescuentos}>
+                    <List.Item onClick={() => setIsOpenDescuentos((cur) => !cur)}>
+                        <div className="flex justify-between w-full">
+                        <Typography className="font-semibold">Descuento</Typography>
+                        <ChevronDown className="w-5 h-5 cursor-pointer" />
+                        </div>
+                    </List.Item>
+                    <AnimatePresence initial={false}>
+                        {isOpenDescuentos && (
+                        <motion.div
+                            key="descuentos"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.23, ease: "easeInOut" }}
+                            style={{ overflow: "hidden" }}
+                        >
                             <List>
-                                {rangosDescuentos.map((rango, idx) => (
+                            {rangosDescuentos.map((rango, idx) => (
                                 <List.Item key={idx}>
-                                    <label className=" flex gap-2 items-center justify-center ">
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedDescuento === rango.label}
-                                            className="w-4 h-4 accent-indigo-600 rounded border-gray-300 " 
-                                            
-                                            onChange={() => setSelectedDescuento(selectedDescuento === rango.label ? "" : rango.label)}
-                                        />
-                                        <Typography variant="" className="text-[14px] leading-none ">
-                                            {rango.label}
-                                        </Typography>
-                                    </label>
+                                <label className="flex gap-2 items-center justify-center">
+                                    <input
+                                    type="checkbox"
+                                    checked={selectedDescuento === rango.label}
+                                    className="w-4 h-4 accent-indigo-600 rounded border-gray-300"
+                                    onChange={() =>
+                                        setSelectedDescuento(
+                                        selectedDescuento === rango.label ? "" : rango.label
+                                        )
+                                    }
+                                    />
+                                    <Typography className="text-[14px] leading-none">
+                                    {rango.label}
+                                    </Typography>
+                                </label>
                                 </List.Item>
-                                ))}
+                            ))}
                             </List>
-                        </Collapse>
+                        </motion.div>
+                        )}
+                    </AnimatePresence>
                     </div>
                 </List>
             </div>
+            {/* parte derecha */}
+
 
             {/* parte izquierda */}
-            <div className="  pl-10 w-[calc(100%-250px)]  ">
+            <div className="  pl-10 w-[calc(100%-250px)] max-lg:w-[100%]  max-lg:pl-0  relative z-0">
                 {/* header */}
-                <div className="w-full h-[60px] flex justify-between items-center mb-10">
-                    <Typography  className="text-gray-700 text-[25px] font-semibold font-Poppins">
+                <div className="w-full h-[60px] flex flex-wrap gap-y-3 max-lg:h-auto justify-between items-center mb-10 max-lg:items-start ">
+                    <Typography  className="text-gray-700 text-[25px] font-semibold font-Poppins max-lg:text-[20px]">
                         {productos.length} productos
                     </Typography>
-                    <Select>
-                        <Select.Trigger className="w-72" placeholder="Ordenar por:" />
-                        <Select.List>
-                            <Select.Option>No filtrar</Select.Option>
-                            <Select.Option>Menor a mayor precio</Select.Option>
-                            <Select.Option>Mayor a menor precio</Select.Option>
-                            <Select.Option>Mas vendidos</Select.Option>
-                            <Select.Option>Mas vendidos</Select.Option>
-                            <Select.Option>Mejor valorados</Select.Option>
-                        </Select.List>
-                    </Select>
+                   {/* input de busqueda */}
+                    <motion.div
+                    initial={{ boxShadow: "0 1px 3px #00000011" }}
+                    whileFocus={{ boxShadow: "0 2px 12px #00000033" }}
+                    className="flex items-center border border-gray-300 rounded w-[250px] px-2 py-1 bg-white lg:h-[50px] lg:w-[300px]"
+                    style={{ borderRadius: 4 }} // Puedes ajustar el radio si quieres más rectangular (0) o redondeado (4)
+                    >
+                    <input
+                        type="text"
+                        value={busqueda}
+                        onChange={e => setBusqueda(e.target.value)}
+                        placeholder="Buscar producto..."
+                        className="w-full outline-none bg-transparent text-black placeholder:text-gray-400"
+                        style={{ border: "none", boxShadow: "none" }}
+                    />
+                    <Search className="text-gray-400 ml-2 w-5 h-5" />
+                    </motion.div>
+                    {/* boton de filtrar */}
+                    <div className="w-[250px] hidden max-lg:block relative ">
+                        {/* Botón para mostrar/ocultar filtros */}
+                        <button
+                            className="w-full flex items-center gap-2 px-4 py-2  border border-gray-400 rounded shadow-sm bg-white text-gray-700 font-semibold relative z-20"
+                            onClick={() => setIsOpenFilters?.(cur => !cur)}
+                        >
+                            Filtrar por
+                            <ChevronDown className={`h-5 w-5 transition-transform ${isOpenFilters ? "rotate-180" : ""}`} />
+                        </button>
+                        <AnimatePresence>
+                            {isOpenFilters && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                                    transition={{ duration: 0.22, ease: "easeInOut" }}
+                                    className="w-full "
+                                >
+                                    <List className="absolute z-20 bg-white  w-[250px]">
+                                        {/* CATEGORIAS */}
+                                        <div className="border-b border-gray-300 p-1">
+                                            <List.Item onClick={() => setIsOpenCategorias((cur) => !cur)}>
+                                                <div className="flex justify-between w-full">
+                                                    <Typography className="font-semibold">Categorias</Typography>
+                                                    <ChevronDown className="w-5 h-5 cursor-pointer" />
+                                                </div>
+                                            </List.Item>
+                                            <AnimatePresence initial={false}>
+                                                {isOpenCategorias && (
+                                                    <motion.div
+                                                        key="categorias"
+                                                        initial={{ height: 0, opacity: 0 }}
+                                                        animate={{ height: "auto", opacity: 1 }}
+                                                        exit={{ height: 0, opacity: 0 }}
+                                                        transition={{ duration: 0.23, ease: "easeInOut" }}
+                                                        style={{ overflow: "hidden" }}
+                                                    >
+                                                        <List className="pb-2">
+                                                            <List.Item>
+                                                                <Checkbox id={categoria}>
+                                                                    <Checkbox.Indicator />
+                                                                </Checkbox>
+                                                                {categoria}
+                                                            </List.Item>
+                                                        </List>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
+
+                                        {/* TALLAS */}
+                                        <div className="border-b border-gray-300 p-1">
+                                            <List.Item onClick={() => setIsOpenTallas((cur) => !cur)}>
+                                                <div className="flex justify-between w-full">
+                                                    <Typography className="font-semibold">Tallas</Typography>
+                                                    <ChevronDown className="w-5 h-5 cursor-pointer" />
+                                                </div>
+                                            </List.Item>
+                                            <AnimatePresence initial={false}>
+                                                {isOpenTallas && (
+                                                    <motion.div
+                                                        key="tallas"
+                                                        initial={{ height: 0, opacity: 0 }}
+                                                        animate={{ height: "auto", opacity: 1 }}
+                                                        exit={{ height: 0, opacity: 0 }}
+                                                        transition={{ duration: 0.23, ease: "easeInOut" }}
+                                                        style={{ overflow: "hidden" }}
+                                                    >
+                                                        <List className="pb-2">
+                                                            {tallas.map((talla, idx) => (
+                                                                <List.Item key={idx}>
+                                                                    <label className="flex gap-2 items-center justify-center">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            className="w-4 h-4 accent-indigo-600 rounded border-gray-300"
+                                                                            checked={selectedTalla === talla}
+                                                                            onChange={() =>
+                                                                                setSelectedTalla(selectedTalla === talla ? "" : talla)
+                                                                            }
+                                                                        />
+                                                                        <Typography className="text-[14px] leading-none">
+                                                                            {talla}
+                                                                        </Typography>
+                                                                    </label>
+                                                                </List.Item>
+                                                            ))}
+                                                        </List>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
+
+                                        {/* MARCAS */}
+                                        <div className="border-b border-gray-300 p-1">
+                                            <List.Item onClick={() => setIsOpenMarcas((cur) => !cur)}>
+                                                <div className="flex justify-between w-full">
+                                                    <Typography className="font-semibold">Marcas</Typography>
+                                                    <ChevronDown className="w-5 h-5 cursor-pointer" />
+                                                </div>
+                                            </List.Item>
+                                            <AnimatePresence initial={false}>
+                                                {isOpenMarcas && (
+                                                    <motion.div
+                                                        key="marcas"
+                                                        initial={{ height: 0, opacity: 0 }}
+                                                        animate={{ height: "auto", opacity: 1 }}
+                                                        exit={{ height: 0, opacity: 0 }}
+                                                        transition={{ duration: 0.23, ease: "easeInOut" }}
+                                                        style={{ overflow: "hidden" }}
+                                                    >
+                                                        <List>
+                                                            {marcas.map((marca, idx) => (
+                                                                <List.Item key={idx}>
+                                                                    <label className="flex gap-2 items-center justify-center">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            className="w-4 h-4 accent-indigo-600 rounded border-gray-300"
+                                                                            checked={selectedMarca === marca}
+                                                                            onChange={() =>
+                                                                                setSelectedMarca(selectedMarca === marca ? "" : marca)
+                                                                            }
+                                                                        />
+                                                                        <Typography className="text-[14px] leading-none">
+                                                                            {marca}
+                                                                        </Typography>
+                                                                    </label>
+                                                                </List.Item>
+                                                            ))}
+                                                        </List>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
+
+                                        {/* PRECIO */}
+                                        <div className="border-b border-gray-300 p-1">
+                                            <List.Item onClick={() => setIsOpenPrecios((cur) => !cur)}>
+                                                <div className="flex justify-between w-full">
+                                                    <Typography className="font-semibold">Precio</Typography>
+                                                    <ChevronDown className="w-5 h-5 cursor-pointer" />
+                                                </div>
+                                            </List.Item>
+                                            <AnimatePresence initial={false}>
+                                                {isOpenPrecios && (
+                                                    <motion.div
+                                                        key="precios"
+                                                        initial={{ height: 0, opacity: 0 }}
+                                                        animate={{ height: "auto", opacity: 1 }}
+                                                        exit={{ height: 0, opacity: 0 }}
+                                                        transition={{ duration: 0.23, ease: "easeInOut" }}
+                                                        style={{ overflow: "hidden" }}
+                                                    >
+                                                        <List>
+                                                            {rangosPrecios.map((rango, idx) => (
+                                                                <List.Item key={idx}>
+                                                                    <label className="flex gap-2 items-center justify-center">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            className="w-4 h-4 accent-indigo-600 rounded border-gray-300"
+                                                                            checked={selectedPrecio === rango.label}
+                                                                            onChange={() =>
+                                                                                setSelectedPrecio(
+                                                                                    selectedPrecio === rango.label ? "" : rango.label
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                        <Typography className="text-[14px] leading-none">
+                                                                            {rango.label}
+                                                                        </Typography>
+                                                                    </label>
+                                                                </List.Item>
+                                                            ))}
+                                                        </List>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
+
+                                        {/* DESCUENTO */}
+                                        <div className="border-b border-gray-300 p-1">
+                                            <List.Item onClick={() => setIsOpenDescuentos((cur) => !cur)}>
+                                                <div className="flex justify-between w-full">
+                                                    <Typography className="font-semibold">Descuento</Typography>
+                                                    <ChevronDown className="w-5 h-5 cursor-pointer" />
+                                                </div>
+                                            </List.Item>
+                                            <AnimatePresence initial={false}>
+                                                {isOpenDescuentos && (
+                                                    <motion.div
+                                                        key="descuentos"
+                                                        initial={{ height: 0, opacity: 0 }}
+                                                        animate={{ height: "auto", opacity: 1 }}
+                                                        exit={{ height: 0, opacity: 0 }}
+                                                        transition={{ duration: 0.23, ease: "easeInOut" }}
+                                                        style={{ overflow: "hidden" }}
+                                                    >
+                                                        <List>
+                                                            {rangosDescuentos.map((rango, idx) => (
+                                                                <List.Item key={idx}>
+                                                                    <label className="flex gap-2 items-center justify-center">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={selectedDescuento === rango.label}
+                                                                            className="w-4 h-4 accent-indigo-600 rounded border-gray-300"
+                                                                            onChange={() =>
+                                                                                setSelectedDescuento(
+                                                                                    selectedDescuento === rango.label ? "" : rango.label
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                        <Typography className="text-[14px] leading-none">
+                                                                            {rango.label}
+                                                                        </Typography>
+                                                                    </label>
+                                                                </List.Item>
+                                                            ))}
+                                                        </List>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
+                                    </List>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
                 </div>
                 {productos.length === 0 ? (
-                    <div className="w-full flex justify-center items-center h-40">
+                    <div className="w-full flex justify-center items-center h-40  relative z-0">
                         <Typography variant="h5" className="text-gray-500">
                             No hay prendas para mostrar
                         </Typography>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid grid-cols-4 gap-4 max-lg:grid-cols-3 max-md:grid-cols-2 relative z-0 producto-listado">
                         {productos.map((producto) => (
-                            <Card key={producto.id} className=" flex flex-col items-start shadow-md relative rounded-none">
-                               <a className="relative group  mb-2 "  href={`/mujer/${categoria}/${producto.id}/${producto.descuentoAplicado}`}>
+                            <Card key={producto.id} id={producto.nombre} className=" flex flex-col items-start shadow-md  rounded-none relative ">
+                               <a className="relative group  mb-2 "  href={`/${genero}/${categoria}/${producto.id}/${producto.descuentoAplicado}`}>
                                     <img
                                     src={url + producto.imagenPrincipal}
                                     alt={producto.nombre}
@@ -388,7 +729,7 @@ React.useEffect(() => {
                                         {producto.marca}
                                     </Typography>
                                     <div className="flex flex-col gap-1">
-                                        <a  className="h-[50px]" href={`/mujer/${categoria}/${producto.id}/${producto.descuentoAplicado}`}>
+                                        <a  className="h-[50px]" href={`/${genero}/${categoria}/${producto.id}/${producto.descuentoAplicado}`}>
                                             {producto.nombre}
                                         </a>
                                         <Typography variant="small" className="text-gray-500  mb-1">

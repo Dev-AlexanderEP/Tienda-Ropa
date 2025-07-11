@@ -33,7 +33,7 @@ export default function Register() {
 
   setLoading(true);
   try {
-    await axios.post("http://localhost:8080/api/v1/usuario", {
+    await axios.post("https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/usuario", {
       nombreUsuario,
       email,
       contrasenia,
@@ -56,7 +56,7 @@ export default function Register() {
       <div className="h-screen w-screen overflow-hidden ">
         <Navbar className="" />
         <div className="flex h-full items-center justify-center ">
-          <div className="w-1/2 h-full  relative flex justify-center items-start py-10">
+          <div className="w-1/2 h-full  relative flex justify-center items-start py-10 max-xl:hidden">
             <div className="w-3/4 h-3/4 flex justify-end items-center ">
               <img src={imagen1} alt="Imagen1" className="w-[400px]  absolute  " />
             </div>
@@ -65,9 +65,9 @@ export default function Register() {
             </div>
           </div>
 
-          <div className="w-1/2 h-full  flex justify-center items-start">
+          <div className="w-1/2 h-full  flex justify-center items-start max-xl:w-3/4 max-lg:w-[90%]">
             <div className=" flex justify-center items-center flex-col gap-y-2 h-[90%]  w-full">
-              <Card className="w-[60%] h-[90%]  p-10 shadow-lg  flex flex-col justify-center items-center">
+              <Card className="w-[60%] h-[90%]  p-10 shadow-lg  flex flex-col justify-center items-center max-lg:w-[90%]">
                 <div className="w-full flex flex-col ">
                   <Typography color="blue-gray" className="mb-6 text-center text-2xl font-sans">
                     Registro

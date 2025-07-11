@@ -95,7 +95,7 @@ useEffect(() => {
 
   return (
     <>
-    <div className="w-[600px] border border-gray-200 p-5">
+    <div className="w-[600px] border border-gray-200 p-5 max-lg:w-auto">
         <div className="flex items-center gap-3 mb-6">
           <Typography className="font-bold font-Poppins text-3xl">Datos de entrega</Typography>
         </div>
@@ -105,13 +105,14 @@ useEffect(() => {
             <Typography variant="small" className="font-bold mb-1 font-Poppins">Departamento</Typography>
             <select
               name="departamento"
+              id="departamento"
               value={datos.departamento}
               onChange={handleChange}
               className="w-full border rounded p-2"
             >
               <option value="" className="font-Poppins">Seleccione departamento</option>
               {departamentos.map(dep => (
-                <option key={dep.id} value={dep.id} className="font-Poppins">
+                <option key={dep.id} id={"Departamento-"+dep.nombre} value={dep.id} className="font-Poppins">
                   {dep.nombre}
                 </option>
               ))}
@@ -121,6 +122,7 @@ useEffect(() => {
             <Typography variant="small" className="font-bold mb-1 font-Poppins">Provincia</Typography>
             <select
               name="provincia"
+              id="provincia"
               value={datos.provincia}
               onChange={handleChange}
               className="w-full border rounded p-2"
@@ -128,7 +130,7 @@ useEffect(() => {
             >
               <option value="" className="font-Poppins">Seleccione provincia</option>
               {provincias.map(prov => (
-                <option key={prov.id} value={prov.id} className="font-Poppins">{prov.nombre}</option>
+                <option key={prov.id} id={"Provincia-"+prov.nombre} value={prov.id} className="font-Poppins">{prov.nombre}</option>
               ))}
             </select>
           </div>
@@ -136,6 +138,7 @@ useEffect(() => {
             <Typography variant="small" className="font-bold mb-1 font-Poppins">Distrito</Typography>
             <select
               name="distrito"
+              id="distrito"
               value={datos.distrito}
               onChange={handleChange}
               className="w-full border rounded p-2"
@@ -143,7 +146,7 @@ useEffect(() => {
             >
               <option value="" className="font-Poppins">Seleccione distrito</option>
               {distritos.map(dist => (
-                <option key={dist.id} value={dist.id} className="font-Poppins">{dist.nombre}</option>
+                <option key={dist.id} id={"Distrito-"+dist.nombre}  value={dist.id} className="font-Poppins">{dist.nombre}</option>
               ))}
             </select>
           </div>
@@ -151,6 +154,7 @@ useEffect(() => {
             <Typography variant="small" className="font-bold mb-1 font-Poppins">Calle</Typography>
             <Input
               type="text"
+              id="calle"
               name="calle"
               value={datos.calle}
               onChange={handleChange}
@@ -162,6 +166,7 @@ useEffect(() => {
             <Typography variant="small" className="font-bold mb-1 font-Poppins">Más detalles</Typography>
             <Textarea
               name="detalle"
+              id="detalle"
               value={datos.detalle}
               onChange={handleChange}
               className="w-full resize-none font-Poppins"
@@ -188,6 +193,7 @@ useEffect(() => {
           </div>
           <Button
             type="submit"
+            id="continuar"
             className="w-full font-bold py-3 text-lg bg-red-500 hover:bg-red-600 border-none"
           >
             Continuar

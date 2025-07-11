@@ -22,6 +22,8 @@ import nino1 from "../../assets/images/nav/nino1.png"
 import nino2 from "../../assets/images/nav/nino2.png"
 // Si DataNav.jsx está en src/components/Navbar/DataNav.jsx
 import axios from "axios";
+import { Link } from "react-router-dom";
+
 
 const Navbar = () => {
   const [user, setUser] = useState(null);
@@ -32,7 +34,7 @@ const [loadingUser, setLoadingUser] = useState(true);
 useEffect(() => {
   const accessToken = localStorage.getItem('accessToken');
   if (accessToken) {
-    axios.get('http://localhost:8080/usuario', {
+    axios.get('https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/usuario', {
       headers: { Authorization: `Bearer ${accessToken}` }
     })
     .then(res => setUser(res.data))
@@ -72,9 +74,9 @@ useEffect(() => {
   const handleCartClick = () => {
     const carritoId = localStorage.getItem('carritoId');
     if (carritoId) {
-      navigate(`/mujer/carrito/${carritoId}`);
+      navigate(`/carrito/${carritoId}`);
     } else {
-      navigate(`/mujer/carrito`);
+      navigate(`/carrito`);
     }
   };
 
@@ -94,6 +96,7 @@ useEffect(() => {
         <ul className="flex items-center h-full  text-sm font-medium gap-4 text-gray-700 font-Poppins ">
             <FlyoutLink
               href="#"
+              ids="moda-mujer"
               FlyoutContent={() => (
                 <CategoryFlyoutContent
                   title="Moda Mujer"
@@ -102,7 +105,7 @@ useEffect(() => {
                   accesorios={mujeraccesoriosLinks}
                   images={[mujer1, mujer2]}
                   buttonLabel="Ver Todo"
-                  buttonHref="#"
+                  buttonHref="/mujer/todas-las-prendas"
                 />
               )}
             >
@@ -111,6 +114,7 @@ useEffect(() => {
           </FlyoutLink>
 
           <FlyoutLink href="#" 
+              ids="moda-hombre"
           FlyoutContent={() => (
                 <CategoryFlyoutContent
                   title="Moda Hombre"
@@ -126,6 +130,7 @@ useEffect(() => {
             <ChevronDown className="w-5 h-5 cursor-pointer" />
           </FlyoutLink> 
           <FlyoutLink href="#" 
+              ids="moda-infantil"
           FlyoutContent={() => (
                 <InfantilCategory
                   ninias={ninasLinks}
@@ -141,6 +146,7 @@ useEffect(() => {
           </FlyoutLink>
           <FlyoutLink 
             href="#" 
+              ids="moda-basicos"
             FlyoutContent={() => (
                   <BasicosCategory
                     basicosMujer={mujerbasicosLinks}
@@ -156,17 +162,12 @@ useEffect(() => {
             Basicos
             <ChevronDown className="w-5 h-5 cursor-pointer" />
           </FlyoutLink>
-          <FlyoutLink href="#" >
-            Outlet
-          </FlyoutLink>
         </ul>
       </div>
       {/* Iconos + botón */}
       <div className="flex items-center gap-10   h-[50px] ">
         <div className='flex gap-5'>
-            <IconButton color=" "  className='hover:shadow-none border-none'>
-              <User className="h-7 w-7 stroke-2" />
-            </IconButton>
+            
 
                 <Badge content={cartCount > 0 ? cartCount : undefined}>
                 <Badge.Content>
@@ -177,9 +178,11 @@ useEffect(() => {
               </Badge.Content>
               <Badge.Indicator>{cartCount > 0 ? cartCount : null}</Badge.Indicator>
             </Badge>
-          <IconButton color="" className='hover:shadow-none border-none'>
-              <Truck className="h-7 w-7 stroke-2" />
-            </IconButton>
+          <Link to="/envio">
+  <IconButton color="" className="hover:shadow-none border-none">
+    <Truck className="h-7 w-7 stroke-2" />
+  </IconButton>
+</Link>
         </div>
         {!loadingUser && (
     user ? (

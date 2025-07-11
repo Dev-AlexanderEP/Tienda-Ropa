@@ -80,13 +80,13 @@ const DatosPersonales = ({ datos, setDatos, onContinuar, carritoId, ventaId, set
       try {
         // 1. Obtener el usuarioId
         const token = localStorage.getItem("accessToken");
-        const userRes = await axios.get("http://127.0.0.1:8080/usuario-id", {
+        const userRes = await axios.get("https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/usuario-id", {
           headers: { Authorization: `Bearer ${token}` }
         });
         const usuarioId = userRes.data; // asume que es solo el número
 
         // 2. Crear la venta
-      const ventaRes = await axios.post("http://localhost:8080/api/v1/venta", {
+      const ventaRes = await axios.post("https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/venta", {
         usuarioId,
         estado: "PENDIENTE"
       });
@@ -95,17 +95,17 @@ const DatosPersonales = ({ datos, setDatos, onContinuar, carritoId, ventaId, set
 
       // 2.1 Verificar si hay otra venta pendiente
       const segundaPendienteRes = await axios.get(
-        `http://localhost:8080/api/v1/venta/segunda-pendiente/${usuarioId}`
+        `https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/venta/segunda-pendiente/${usuarioId}`
       );
       const otraVentaPendienteId = segundaPendienteRes.data.object;
 
       // Si existe otra venta pendiente y es diferente a la recién creada, elimínala
       if (otraVentaPendienteId && otraVentaPendienteId !== ventaId) {
-        await axios.delete(`http://localhost:8080/api/v1/venta/${otraVentaPendienteId}`);
+        await axios.delete(`https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/venta/${otraVentaPendienteId}`);
       }
 
       // 3. Pasar el carrito a venta_detalle
-      await axios.post("http://localhost:8080/api/v1/carritodetalle", {
+      await axios.post("https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/carritodetalle", {
         ventaId,
         carritoId
       });
@@ -132,6 +132,7 @@ const DatosPersonales = ({ datos, setDatos, onContinuar, carritoId, ventaId, set
           <Typography variant="small" className="font-bold mb-1">Correo</Typography>
           <Input
             type="email"
+            id="email"
             name="correo"
             value={datos.correo}
             onChange={handleChange}
@@ -141,11 +142,12 @@ const DatosPersonales = ({ datos, setDatos, onContinuar, carritoId, ventaId, set
             maxLength={100}
           />
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-4 max-lg:flex-col">
           <div className="flex-1">
             <Typography variant="small" className="font-bold mb-1">Nombre</Typography>
             <Input
               type="text"
+              id="nombre"
               name="nombre"
               value={datos.nombre}
               onChange={handleChange}
@@ -160,6 +162,7 @@ const DatosPersonales = ({ datos, setDatos, onContinuar, carritoId, ventaId, set
             <Input
               type="text"
               name="apellidos"
+              id="apellidos"
               value={datos.apellidos}
               onChange={handleChange}
               className="w-full"
@@ -169,12 +172,13 @@ const DatosPersonales = ({ datos, setDatos, onContinuar, carritoId, ventaId, set
             />
           </div>
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-4 max-lg:flex-col">
           <div className="flex-1">
             <Typography variant="small" className="font-bold mb-1">Documento de Identidad</Typography>
             <Input
               type="text"
               name="documento"
+              id="dni"
               value={datos.documento}
               onChange={handleChange}
               className="w-full"
@@ -189,6 +193,7 @@ const DatosPersonales = ({ datos, setDatos, onContinuar, carritoId, ventaId, set
             <Input
               type="text"
               name="telefono"
+              id="telefono"
               value={datos.telefono}
               onChange={handleChange}
               className="w-full"
@@ -251,21 +256,24 @@ const DatosPersonales = ({ datos, setDatos, onContinuar, carritoId, ventaId, set
               Quiero recibir novedades y promociones.
             </Typography>
           </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2  ">
           <Checkbox
             id="acepta"
             name="acepta"
             checked={!!datos.acepta}
             onChange={handleChange}
+            className="max-md:w-8 h-5"
           >
             <Checkbox.Indicator />
           </Checkbox>
           <Typography
             as="label"
+
             htmlFor="acepta"
-            className="cursor-pointer text-foreground"
+            className="cursor-pointer text-foreground "
           >
-            <span>
+            
+            <span className="max-md:text-sm" >
               Acepto los <a href="#" className="text-blue-600 underline">Términos y Condiciones</a> y la{" "}
               <a href="#" className="text-blue-600 underline">Política de protección de datos personales</a>.
             </span>
@@ -279,6 +287,7 @@ const DatosPersonales = ({ datos, setDatos, onContinuar, carritoId, ventaId, set
         </div>
         <Button
           type="submit"
+          id="continuar"
           className="mt-6 w-full font-bold py-3 text-lg bg-red-500 hover:bg-red-600 border-none "
         >
           Continuar

@@ -78,19 +78,19 @@ export default function FooterC() {
 <div className="absolute inset-0 bg-white opacity-95"></div>
  
       <div className="mx-auto w-full max-w-7xl px-8  grid grid-flow-row p-5 relative z-10  ">
-        <div className="grid grid-cols-1 justify-between gap-4 md:grid-cols-4  ">
-            <div className=" flex  items-center justify-center">
-                <Typography type="h1" className="font-KiwiFruit text-red-600 font-normal ">
-                    Mix
+        <div className="grid grid-cols-1 justify-between gap-4 md:grid-cols-4   max-md:grid-cols-4">
+            <div className=" flex  items-center justify-center   max-md:col-span-4">
+                <Typography className="font-KiwiFruit text-red-600 font-normal !text-7xl max-lg:!text-5xl max-md:!text-6xl ">
+                  Mix
                 </Typography>
-                <Typography type="h1" className=" font-KiwiFruit font-normal ">
-                    &Match
+                <Typography className="font-KiwiFruit font-normal !text-7xl max-lg:!text-5xl max-md:!text-6xl">
+                  &Match
                 </Typography>
                 
             </div>
-          <div className="grid grid-cols-3 justify-between gap-x-6 gap-y-4  col-span-3">
+          <div className="grid grid-cols-3 justify-between gap-x-6 gap-y-4  col-span-3 max-md:grid-cols-1 max-md:col-span-4 ">
             {LINKS.map(({ title, items }) => (
-              <ul key={title} className="">
+              <ul key={title} className=" max-md:flex max-md:flex-col max-md:items-center ">
                 <Typography className="mb-2 font-semibold ">
                   {title}
                 </Typography>
@@ -99,12 +99,12 @@ export default function FooterC() {
                     <Typography
                       as="a"
                       href={href}
-                      className="py-1 hover:text-primary flex r"
+                      className="py-1 hover:text-primary flex "
                     >
                         {title}
                     </Typography>
                         {title === "Libro de quejas y reclamos " && (
-                            <a href="#">
+                            <a href="#" className="max-md:flex items-center justify-center ">
                                 <img src={libro} alt="Libro de quejas" className="inline h-[90px] w-[100px] " />
                             </a>
                         )}
@@ -114,7 +114,7 @@ export default function FooterC() {
             ))}
           </div>
         </div>
-        <div className="flex w-full items-center justify-evenly   py-4 h-[100px]">
+        <div className="flex w-full items-center justify-evenly   py-4 h-[100px] flex-wrap max-md:h-auto gap-y-4">
             <img src={AmericanExpress} alt="American Express" />
             <img src={Visa} alt="Visa" />
             <img src={Mastercard} alt="Mastercard" />
@@ -126,11 +126,11 @@ export default function FooterC() {
             </Typography>
         </div>
       </div>
-        <div className="bg-red-200 w-full flex flex-col py-2 relative z-10">
+        <div className="bg-red-200 w-full flex flex-col py-2 relative z-10 ">
             <Typography type="small" className="text-center">
                 &copy; {YEAR}{" "} El S.A.C. Todos los derechos reservados.
             </Typography>
-            <div className="flex gap-1 sm:justify-center bg-r">
+            <div className="flex gap-1 sm:justify-center  max-md:justify-center">
                 <IconButton
                 as="a"
                 href="#"

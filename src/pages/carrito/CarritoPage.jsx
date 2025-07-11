@@ -10,6 +10,7 @@ import Direccion from "./Direccion";
 import MetodoPago from "./MetodoPago"; // Asegúrate de que la ruta sea correcta
 import { useNavigate } from "react-router-dom";
 import FooterC from "../../components/footer/Footer";
+
 const CarritoPage = () => {
   const { id } = useParams();
   const [total, setTotal] = useState(0);
@@ -40,13 +41,13 @@ const CarritoPage = () => {
       try {
         const token = localStorage.getItem("accessToken");
         // Obtener usuarioId
-        const userRes = await fetch("http://127.0.0.1:8080/usuario-id", {
+        const userRes = await fetch("https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/usuario-id", {
           headers: { Authorization: `Bearer ${token}` }
         });
         const usuarioId = await userRes.json();
 
         // Consultar direcciones guardadas
-        const res = await fetch(`http://localhost:8080/api/v1/direcciones/usuario/${usuarioId}`);
+        const res = await fetch(`https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/direcciones/usuario/${usuarioId}`);
         const data = await res.json();
         if (data.object && data.object.length > 0) {
           const dir = data.object[0];
@@ -67,18 +68,57 @@ const CarritoPage = () => {
         console.error("No se pudo cargar la dirección guardada", error);
       }
     };
-
     fetchDireccionGuardada();
   }, []);
+  
 const [descuento, setDescuento] = useState(null);
   if (!id) {
     // Si no hay id, muestra una imagen o mensaje
     return (
-      <div className="flex flex-col items-center justify-center h-96">
-        <img src="/no-cart.png" alt="No hay carrito" className="w-40 h-40 mb-4" />
-        <p className="text-gray-500 text-lg">No tienes un carrito activo.</p>
+  <>
+    <div className="w-full h-[80px] flex justify-between items-center pl-[10%]">
+      <div className="flex items-center h-full gap-10">
+        <div className="font-KiwiFruit text-7xl flex">
+          <p className="text-red-600">Mix</p>
+          <p className=""> &Match</p>
+        </div>
+        <Typography color="blue-gray" className="text-center text-2xl font-Poppins">
+          Carrito de compras
+        </Typography>
       </div>
-    );
+      <div
+        className="flex items-center justify-center h-full w-[500px] cursor-pointer"
+        onClick={() => navigate(-1)}
+      >
+        <Typography color="blue-gray" className="text-center text-2xl font-Poppins flex items-center gap-5 ">
+          <ArrowLeftFromLine className="w-9 h-9" />
+          Seguir comprando
+        </Typography>
+      </div>
+    </div>
+    {/* Carrito vacío */}
+    <div className="flex flex-col items-center justify-center w-full h-[60vh]">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-24 w-24 text-red-400 mb-6"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={1.5}
+      >
+        <path strokeLinecap="round" strokeLinejoin="round"
+          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.293 2.293a1 1 0 00.083 1.32C6.406 17.07 7.18 17.5 8 17.5h8a1 1 0 00.91-.59l1.293-2.293M7 13l-1-2m10 2l1-2M6 21a1 1 0 100-2 1 1 0 000 2zm12 0a1 1 0 100-2 1 1 0 000 2z"
+        />
+      </svg>
+      <Typography className="text-2xl font-Poppins text-gray-500 mb-2">
+        Tu carrito está vacío
+      </Typography>
+      <Typography className="text-md font-Poppins text-gray-400">
+        Agrega productos para verlos aquí.
+      </Typography>
+    </div>
+  </>
+);
   }
   let contenidoPaso = null;
   if (step === 0) {
@@ -89,7 +129,7 @@ const [descuento, setDescuento] = useState(null);
   setTotal={setTotal}/>;
   } else if (step === 1) {
     contenidoPaso = (
-    <div className="flex gap-8  w-full justify-center">
+    <div className="flex gap-8  w-full justify-center max-lg:flex-col max-lg:items-center">
       <div className=" ">
         <DatosPersonales
           datos={datosPersonales}
@@ -100,13 +140,13 @@ const [descuento, setDescuento] = useState(null);
   setVentaId={setVentaId}
         />
       </div>
-      <div className="w-[350px]">
-<ResumenCompra carritoId={id} descuento={descuento} onNextStep={() => setStep(0)} />      </div>
+      <div className="w-[350px] max-lg:w-[90%]">
+      <ResumenCompra carritoId={id} descuento={descuento} onNextStep={() => setStep(0)} />      </div>
     </div>
   );
   } else if (step === 2) {
   contenidoPaso = (
-    <div className="flex gap-8  w-full justify-center">
+    <div className="flex gap-8  w-full justify-center max-lg:flex-col max-lg:items-center">
       <div className="">
         <Direccion
           datos={datosPersonales}
@@ -114,20 +154,18 @@ const [descuento, setDescuento] = useState(null);
           onContinuar={() => setStep(step + 1)}
         />
       </div>
-      <div className="w-[350px]">
-        <ResumenCompra carritoId={id} descuento={descuento} onNextStep={() => setStep(0)} /> 
-      </div>
+      <div className="w-[350px] max-lg:w-[90%]">
+      <ResumenCompra carritoId={id} descuento={descuento} onNextStep={() => setStep(0)} />      </div>
     </div>
   );
 } else if (step === 3) {
   contenidoPaso = (
-    <div className="flex gap-8  w-full justify-center">
+    <div className="flex gap-8  w-full justify-center max-lg:flex-col max-lg:items-center">
       <div className="  flex items-center justify-center">
         <MetodoPago total={total} ventaId={ventaId}  carritoId={id} datos={datosPersonales} />
       </div>
-      <div className="w-[350px]">
-        <ResumenCompra carritoId={id} descuento={descuento} onNextStep={() => setStep(0)} />
-      </div>
+      <div className="w-[350px] max-lg:w-[90%]">
+<ResumenCompra carritoId={id} descuento={descuento} onNextStep={() => setStep(0)} />      </div>
     </div>
   );
 }
@@ -136,28 +174,28 @@ const [descuento, setDescuento] = useState(null);
   // Aquí va la lógica para mostrar el carrito con el id
   return (
     <>
-        <div className="w-full h-[80px]   flex  justify-between  items-center pl-[10%]">
-            <div className="flex  items-center  h-full gap-10  ">
-                <div className="font-KiwiFruit text-7xl  flex  ">
+        <div className="w-full h-[80px]   flex  justify-between  items-center   px-[10%] max-lg:justify-center max-lg:px-[20px] max-lg:gap-2">
+            <div className="flex  items-center  h-full gap-10 max-lg:gap-5  max-md:gap-1"> 
+                <div className="font-KiwiFruit text-7xl  flex  max-lg:text-5xl ">
                 <p className="text-red-600">Mix</p>
                 <p className=""> &Match</p>
                 </div>
-                    <Typography color="blue-gray" className=" text-center text-2xl font-Poppins ">
+                    <Typography color="blue-gray" className=" text-center text-2xl font-Poppins max-lg:!text-xl">
                         Carrito de compras                                
                     </Typography>
 
             </div>
                         <div
-              className="flex items-center justify-center h-full  w-[500px] cursor-pointer"
+              className="flex items-center justify-center h-full  w-[500px] cursor-pointer max-lg:w-[300px]  max-md:w-[200px]"
               onClick={() => navigate(-1)} // Esto te regresa a la página anterior
             >
-              <Typography color="blue-gray" className="text-center text-2xl font-Poppins flex items-center gap-5 ">
-                <ArrowLeftFromLine className="w-9 h-9"/>
+              <Typography color="blue-gray" className="text-center text-2xl font-Poppins flex items-center gap-5 max-lg:!text-xl  max-lg:gap-2 max-md:!text-lg">
+                <ArrowLeftFromLine className="w-9 h-9 max-lg:w-7 max-lg:h-7 "/>
                 Seguir comprando 
               </Typography>
             </div>
         </div>
-        <div className="px-[10%] w-full h-[230px] flex justify-center  flex-col items-center">
+        <div className="px-[10%] w-full h-[230px] flex justify-center  flex-col items-center max-xl:px-[5%]">
           <div className="w-full ">
       <Timeline
         mode="stepper"
@@ -175,17 +213,14 @@ const [descuento, setDescuento] = useState(null);
           </Timeline.Header>
 
           <Timeline.Body className="text-center ">
-            <Typography variant=""  className="text-xl font-Poppins" color={step >= 0 ? "blue" : "inherit"}>
+            <Typography variant=""  className="text-xl font-Poppins max-xl:text-lg max-md:text-base" color={step >= 0 ? "blue" : "inherit"}>
               Carrito de compras
             </Typography>
-            <Typography variant="small">Detalles del carrito.</Typography>
+            <Typography variant="small" className="max-xl:hidden">Detalles del carrito.</Typography>
           </Timeline.Body>
         </Timeline.Item>
-
         
-
         <Timeline.Item value={1} disabled={step < 1} className="w-full ">
-
           <Timeline.Header>
             <Timeline.Separator className="translate-x-1/2 group-data-[completed=true]:bg-red-400" />
             <Timeline.Icon className="mx-auto w-[50px] h-[50px] selected:bg-red-400 group-data-[active=true]:bg-red-500 group-data-[completed=true]:bg-red-500">
@@ -194,10 +229,10 @@ const [descuento, setDescuento] = useState(null);
           </Timeline.Header>
 
           <Timeline.Body className="text-center">
-            <Typography variant="" className="text-xl font-Poppins" color={step >= 1 ? "blue" : "inherit"}>
+            <Typography variant="" className="text-xl font-Poppins max-xl:text-lg max-md:text-base" color={step >= 1 ? "blue" : "inherit"}>
               Datos personales
             </Typography>
-            <Typography variant="small">Completa tus datos.</Typography>
+            <Typography variant="small" className="max-xl:hidden" >Completa tus datos.</Typography>
           </Timeline.Body>
 
         </Timeline.Item>
@@ -212,10 +247,10 @@ const [descuento, setDescuento] = useState(null);
           </Timeline.Header>
 
           <Timeline.Body className="text-center">
-            <Typography variant="h6" className="text-xl font-Poppins" color={step >= 3 ? "blue" : "inherit"}>
+            <Typography variant="h6" className="text-xl font-Poppins max-xl:text-lg max-md:text-base" color={step >= 3 ? "blue" : "inherit"}>
               Tipos de entrega
             </Typography>
-            <Typography variant="small">Selecciona el tipo de entrega.</Typography>
+            <Typography variant="small" className="max-xl:hidden">Selecciona el tipo de entrega.</Typography>
           </Timeline.Body>
 
         </Timeline.Item>
@@ -228,32 +263,14 @@ const [descuento, setDescuento] = useState(null);
             </Timeline.Icon>
           </Timeline.Header>
         <Timeline.Body className="text-center">
-            <Typography variant="h6"  className="text-xl font-Poppins" color={step >= 3 ? "blue" : "inherit"}>
+            <Typography variant="h6"  className="text-xl font-Poppins max-xl:text-lg max-md:text-base" color={step >= 3 ? "blue" : "inherit"}>
             Método de pago
             </Typography>
-            <Typography variant="small">Selecciona el método de pago.</Typography>
+            <Typography variant="small" className="max-xl:hidden">Selecciona el método de pago.</Typography>
         </Timeline.Body>  
-
         </Timeline.Item>
-        
-
       </Timeline>
-
-      
             </div>
-    {/* <div className="flex w-full justify-between gap-4 ">
-        <Button
-         disabled={step === 0} onClick={() => setStep(step - 1)}>
-          Anterior
-        </Button>
-        <Button
-        
-          disabled={step === 3}
-          onClick={() => setStep(step + 1)}
-        >
-          Siguiente
-        </Button>
-      </div> */}
         </div>
         <div className="w-full pb-[100px]">
         {contenidoPaso}

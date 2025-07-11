@@ -11,7 +11,7 @@ const MetodoPago = ({ onSeleccionar, total, ventaId, carritoId, datos }) => {
   );
 
   useEffect(() => {
-    axios.get("http://localhost:8080/api/v1/metodo-pagos")
+    axios.get("https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/metodo-pagos")
       .then(res => setMetodos(res.data.object || []))
       .catch(() => setMetodos([]));
   }, []);
@@ -36,7 +36,7 @@ const MetodoPago = ({ onSeleccionar, total, ventaId, carritoId, datos }) => {
   };
  
   return (
-    <div className="w-[600px] items-center gap-6 p-8 border border-gray-200 h-full">
+    <div className="w-[600px] items-center gap-6 p-8 border border-gray-200 h-full max-lg:w-auto">
       <div className="flex items-center gap-3 mb-6">
         <Typography className="font-bold font-Poppins text-3xl">Metodo de Pago</Typography>
       </div>

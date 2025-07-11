@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 
 import { AnimatePresence, motion } from "framer-motion";
-const FlyoutLink = ({ children, href, FlyoutContent }) => {
+
+
+const FlyoutLink = ({ children, href, FlyoutContent, ids }) => {
+    console.log('ID recibido:', ids); // <-- Agregar esta línea
+
   const [open, setOpen] = useState(false);
   const showFlyout = FlyoutContent && open;
     const [hovering, setHovering] = useState(false);
@@ -10,6 +14,7 @@ const FlyoutLink = ({ children, href, FlyoutContent }) => {
   return (
     <div
       className="h-full  cursor-pointer"
+      id={ids}
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
     >

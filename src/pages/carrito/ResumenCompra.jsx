@@ -6,7 +6,7 @@ const ResumenCompra = ({ carritoId, descuento, onNextStep }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`http://127.0.0.1:8080/api/v1/carrito/${carritoId}`)
+    fetch(`https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/api/v1/carrito/${carritoId}`)
       .then(res => res.json())
       .then(data => setCarrito(data.object))
       .finally(() => setLoading(false));
@@ -20,12 +20,12 @@ const ResumenCompra = ({ carritoId, descuento, onNextStep }) => {
   const total = subtotal - descuentoValor;
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow w-full max-w-xs">
+    <div className="bg-white rounded-lg p-6 shadow w-full ">
       <h3 className="font-bold text-xl text-center mb-4">Resumen de la compra</h3>
       <div className="mb-4">
         {carrito.carritoItems.map(item => (
           <div key={item.id} className="flex items-center gap-2 mb-2">
-            <img src={`http://127.0.0.1:8080/${item.prenda.imagen.principal}`} alt={item.prenda.nombre} className="w-10 h-12 object-cover rounded" />
+            <img src={`https://sv-02udg1brnilz4phvect8.cloud.elastika.pe/api-tienda/${item.prenda.imagen.principal}`} alt={item.prenda.nombre} className="w-10 h-12 object-cover rounded" />
             <div>
               <div className="font-semibold text-sm">{item.prenda.nombre} {item.talla.nomTalla && <span className="text-xs">({item.talla.nomTalla})</span>}</div>
               <div className="text-xs text-gray-500">Cantidad: {item.cantidad}</div>
@@ -55,6 +55,7 @@ const ResumenCompra = ({ carritoId, descuento, onNextStep }) => {
       <div className="text-right">
         <button
           type="button"
+          id="volver-carrito"
           className="text-blue-600 text-xs underline"
           onClick={() => onNextStep && onNextStep()}
         >
