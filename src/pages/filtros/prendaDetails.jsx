@@ -27,6 +27,7 @@ const PrendaDetails = () => {
   const [openCarac, setOpenCarac] = useState(false);
   const [openMedidas, setOpenMedidas] = useState(false);
   const [selectedTalla, setSelectedTalla] = useState(null); // Estado para la talla seleccionada
+        const token = localStorage.getItem('accessToken'); // o sessionStorage.getItem('token')
 
   
   const navigate = useNavigate();
@@ -55,7 +56,11 @@ const PrendaDetails = () => {
   useEffect(() => {
     const fetchPrenda = async () => {
       try {
-        const response = await fetch(`http://localhost:8080/api/v1/prenda/${id}`);
+        const response = await fetch(`http://localhost:8080/api/v1/prenda/${id}`,{
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : ''
+          }
+        });
         const data = await response.json();
         setPrenda(data.object);
                 setImagen(`http://localhost:8080/${data.object.imagen.principal}`); // Imagen inicial
@@ -111,7 +116,7 @@ const handleAddToCart = async () => {
       let carritoId;
       let tituloCarrito = "";
     const abiertoRes = await axios.get(
-      `http://localhost:8080/api/v1/carrito/abierto/usuario/${usuarioId}`
+      `http://localhost:8080/api/v1/carrito/abierto/usuario/${usuarioId}`, { headers: { Authorization: `Bearer ${token}` } }
     );
    if (abiertoRes.data.object && abiertoRes.data.object.length > 0) {
   carritoId = abiertoRes.data.object[0].id;
@@ -141,7 +146,8 @@ localStorage.setItem('carritoId', carritoId);
           carritoId,
           prendaId: Number(id),
           tallaId: selectedTalla // Aquí debes enviar el ID de la talla, no el nombre
-        }
+        },
+        headers: { Authorization: `Bearer ${token}` }
       }
     );
     Swal.fire({
@@ -177,7 +183,7 @@ localStorage.setItem('carritoId', carritoId);
   }
   // ACTUALIZA EL CONTADOR DEL CARRITO AQUÍ
     const cantidadRes = await axios.get(
-      `http://localhost:8080/api/v1/carrito/${carritoId}/cantidad-items`
+      `http://localhost:8080/api/v1/carrito/${carritoId}/cantidad-items`, { headers: { Authorization: `Bearer ${token}` } }
     );
     console.log("Cantidad de items en el carrito:", cantidadRes.data);
     // Si tu backend responde { cantidad: 3 }, usa cantidadRes.data.cantidad
@@ -200,7 +206,7 @@ const handleRestarUno = async (id, selectedTalla) => {
   try {
     const res = await fetch(
       `http://localhost:8080/api/v1/restar-uno?prendaId=${id}&tallaId=${selectedTalla}`,
-      { method: "PUT" }
+      { method: "PUT", headers: { 'Authorization': token ? `Bearer ${token}` : '' } }
     );
     const data = await res.json();
     if (!res.ok || !data.object) {

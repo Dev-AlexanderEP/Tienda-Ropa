@@ -26,6 +26,9 @@ const FilterPage = () => {
   const [selectedDescuento, setSelectedDescuento] = React.useState("");
   const [busqueda, setBusqueda] = React.useState("");
 
+
+        const token = localStorage.getItem('accessToken'); // o sessionStorage.getItem('token')
+
   //prendas
   const [productos, setProductos] = React.useState([]);
 
@@ -86,10 +89,16 @@ const FilterPage = () => {
 
         // Llama a la API con los parámetros construidos
         const res = await fetch(
-          `/api/v1/prendas-filtradas?${params.toString()}`
+          `http://localhost:8080/api/v1/prendas-filtradas?${params.toString()}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+          }
         );
         const data = await res.json();
-
+console.log(`http://localhost:8080/api/v1/prendas-filtradas?${params.toString()}`)
         // Actualiza el estado con los productos obtenidos
         if (data.object) {
           // Elimina duplicados basados en el ID
@@ -118,21 +127,33 @@ const FilterPage = () => {
 
   React.useEffect(() => {
     if (categoria && genero) {
-      fetch(`/api/v1/prenda-tallas/${categoria}`)
+      fetch(`http://localhost:8080/api/v1/prenda-tallas/${categoria}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
         .then((res) => res.json())
         .then((data) => {
           if (data.object) setTallas(data.object);
         })
         .catch(() => setTallas([]));
 
-      fetch(`/api/v1/prenda-marcas/${categoria}`)
+      fetch(`http://localhost:8080/api/v1/prenda-marcas/${categoria}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
         .then((res) => res.json())
         .then((data) => {
           if (data.object) setMarcas(data.object);
         })
         .catch(() => setMarcas([]));
 
-      fetch(`/api/v1/prenda-precios/${categoria}`)
+      fetch(`http://localhost:8080/api/v1/prenda-precios/${categoria}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
         .then((res) => res.json())
         .then((data) => {
           if (data.object && Array.isArray(data.object[0])) {
@@ -157,12 +178,18 @@ const FilterPage = () => {
         .catch(() => setRangosPrecios([]));
 
       fetch(
-        `/api/v1/prendas/descuentos-aplicados?categoria=${categoria}&genero=${genero}`
+        `http://localhost:8080/api/v1/prendas/descuentos-aplicados?categoria=${categoria}&genero=${genero}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       )
         .then((res) => res.json())
         .then((data) => {
           if (data.object) setProductos(data.object);
           console.log(data);
+          console.log("hola")
         })
         .catch(() => setProductos([]));
     }
@@ -171,7 +198,11 @@ const FilterPage = () => {
   // 3. Agrega este List.Item y Collapse donde quieras mostrar el filtro de descuentos
   React.useEffect(() => {
     if (categoria) {
-      fetch(`/api/v1/prendas/todos-descuentos/${categoria}`)
+      fetch(`http://localhost:8080/api/v1/prendas/todos-descuentos/${categoria}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
         .then((res) => res.json())
         .then((data) => {
           // Suponiendo que data.object es un array de descuentos aplicados
@@ -197,7 +228,12 @@ const FilterPage = () => {
     const query = busqueda.trim();
     if (!query) {
       fetch(
-        `/api/v1/prendas/descuentos-aplicados?categoria=${categoria}&genero=${genero}`
+        `http://localhost:8080/api/v1/prendas/descuentos-aplicados?categoria=${categoria}&genero=${genero}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       )
         .then((res) => res.json())
         .then((data) => {
@@ -215,8 +251,11 @@ const FilterPage = () => {
         categoria: categoria,
         genero: genero,
       });
-      fetch(`/api/v1/prendas/buscar?${params.toString()}`, {
+      fetch(`http://localhost:8080/api/v1/prendas/buscar?${params.toString()}`, {
         signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       })
         .then((res) => res.json())
         .then((data) => {

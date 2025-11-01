@@ -9,9 +9,12 @@ const MetodoPago = ({ onSeleccionar, total, ventaId, carritoId, datos }) => {
   const [contenidoExtra, setContenidoExtra] = useState(
     <FormCreditCart amount={total} ventaId={ventaId} metodoId={3} carritoId={carritoId} datos={datos} />
   );
+        const token = localStorage.getItem('accessToken'); // o sessionStorage.getItem('token')
 
   useEffect(() => {
-    axios.get("http://localhost:8080/api/v1/metodo-pagos")
+    axios.get("http://localhost:8080/api/v1/metodo-pagos", {
+      headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+    })
       .then(res => setMetodos(res.data.object || []))
       .catch(() => setMetodos([]));
   }, []);

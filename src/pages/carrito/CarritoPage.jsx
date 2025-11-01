@@ -33,12 +33,12 @@ const CarritoPage = () => {
     guardarData1: false,
     guardarData2: false,
   });
+        const token = localStorage.getItem("accessToken");
 
   
   useEffect(() => {
     const fetchDireccionGuardada = async () => {
       try {
-        const token = localStorage.getItem("accessToken");
         // Obtener usuarioId
         const userRes = await fetch("http://localhost:8080/usuario-id", {
           headers: { Authorization: `Bearer ${token}` }
@@ -46,7 +46,9 @@ const CarritoPage = () => {
         const usuarioId = await userRes.json();
 
         // Consultar direcciones guardadas
-        const res = await fetch(`http://localhost:8080/api/v1/direcciones/usuario/${usuarioId}`);
+        const res = await fetch(`http://localhost:8080/api/v1/direcciones/usuario/${usuarioId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         const data = await res.json();
         if (data.object && data.object.length > 0) {
           const dir = data.object[0];

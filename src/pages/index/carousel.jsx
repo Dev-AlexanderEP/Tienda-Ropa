@@ -53,7 +53,7 @@ export default function Carousel() {
 
   return (
     <>
-      <div className="relative w-full h-[95%] overflow-hidden max-sm:h-[220px] max-md:h-[350px] max-lg:h-[400px] max-xl:h-[450px] max-2xl:h-[580px]">
+      <div className=" relative w-full h-[80%] overflow-hidden max-sm:h-[220px] max-md:h-[350px] max-lg:h-[400px] max-xl:h-[450px] max-2xl:h-[580px]">
         <motion.div
           drag="x"
           dragConstraints={{
@@ -103,7 +103,7 @@ const Images = ({ imgIndex }) => {
             }}
             transition={SPRING_OPTIONS}
             className="
-              w-[100%] h-[75%] shrink-0 rounded-sm object-contain aspect-video
+              w-[100%] h-[75%] shrink-0 rounded-sm object-contain aspect-video 
               max-xl:h-[70%]
               max-lg:h-[80%]
               max-md:h-[90%]

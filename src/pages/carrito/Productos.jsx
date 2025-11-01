@@ -16,10 +16,16 @@ const Productos = ({ carritoId, onNextStep, descuento, setDescuento , total, set
   const [totalConDescuento, setTotalConDescuento] = useState(0);
   const [aplicando, setAplicando] = useState(false);
   const [mensajeCupon, setMensajeCupon] = useState("");
+        const token = localStorage.getItem('accessToken'); // o sessionStorage.getItem('token')
+
   // Actualiza el carrito y el total
   const fetchCarrito = () => {
     setLoading(true);
-    fetch(`${API_URL}${carritoId}`)
+    fetch(`${API_URL}${carritoId}`, {
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : ''
+      }
+    })
       .then((res) => res.json())
       .then((data) => {
         setCarrito(data.object);
@@ -61,6 +67,9 @@ const Productos = ({ carritoId, onNextStep, descuento, setDescuento , total, set
   // 2. Llama a la API para actualizar en backend
   fetch(`${API_ITEM_URL}${itemId}/cantidad?cantidad=${cantidad}`, {
     method: "PUT",
+    headers: {
+      'Authorization': token ? `Bearer ${token}` : ''
+    }
   })
     .then((res) => {
       if (!res.ok) throw new Error("Error al actualizar cantidad");
@@ -81,7 +90,7 @@ const handleRestarUno = async (item) => {
   try {
     const res = await fetch(
       `http://localhost:8080/api/v1/sumar-uno?prendaId=${item.prenda.id}&tallaId=${item.talla.id}`,
-      { method: "PUT" }
+      { method: "PUT", headers: { 'Authorization': token ? `Bearer ${token}` : '' } }
     );
     const data = await res.json();
     if (!res.ok || !data.object) {
@@ -98,7 +107,7 @@ const handleSumarUno = async (item) => {
   try {
     const res = await fetch(
       `http://localhost:8080/api/v1/restar-uno?prendaId=${item.prenda.id}&tallaId=${item.talla.id}`,
-      { method: "PUT" }
+      { method: "PUT", headers: { 'Authorization': token ? `Bearer ${token}` : '' } }
     );
     const data = await res.json();
     if (!res.ok || !data.object) {
@@ -137,6 +146,7 @@ const handleSumarUno = async (item) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           usuarioId: Number(usuarioId),
@@ -191,11 +201,12 @@ const handleSumarUno = async (item) => {
           // 1. Sumar el stock al eliminar el item del carrito
           await fetch(
             `http://localhost:8080/api/v1/sumar?prendaId=${item.prenda.id}&tallaId=${item.talla.id}&cantidad=${item.cantidad}`,
-            { method: "PUT" }
+            { method: "PUT", headers: { 'Authorization': token ? `Bearer ${token}` : '' } }
           );
           // 2. Eliminar el item del carrito
           const res = await fetch(`${API_ITEM_URL}${itemId}`, {
             method: "DELETE",
+            headers: { 'Authorization': token ? `Bearer ${token}` : '' }
           });
           if (!res.ok) throw new Error("No se pudo eliminar el producto");
           // Actualiza la vista recargando el carrito

@@ -4,9 +4,12 @@ import PropTypes from "prop-types";
 const ResumenCompra = ({ carritoId, descuento, onNextStep }) => {
   const [carrito, setCarrito] = useState(null);
   const [loading, setLoading] = useState(true);
+        const token = localStorage.getItem('accessToken'); // o sessionStorage.getItem('token')
 
   useEffect(() => {
-    fetch(`http://localhost:8080/api/v1/carrito/${carritoId}`)
+    fetch(`http://localhost:8080/api/v1/carrito/${carritoId}`, {
+      headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+    })
       .then(res => res.json())
       .then(data => setCarrito(data.object))
       .finally(() => setLoading(false));

@@ -24,11 +24,12 @@ export default function Login() {
     try {
       const res = await axios.post(
         "http://localhost:8080/token",
+        // "https://mixmatch.zapto.org/token",
         new URLSearchParams({
-          grantType: "password", // esperado por el backend
           username,
           password,
-          withRefreshToken: "true", // el backend lo espera como string
+          grantType: "password", // esperado por el backend
+          withRefreshToken: true, // el backend lo espera como string
         }),
         {
           headers: {
