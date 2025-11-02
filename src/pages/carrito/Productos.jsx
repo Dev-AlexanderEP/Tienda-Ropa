@@ -3,10 +3,17 @@ import PropTypes from "prop-types";
 import { IconButton, Typography, Input, Button   } from "@material-tailwind/react";
 import { Plus, Minus,Trash2  } from "lucide-react";
 import Swal from "sweetalert2";
-const API_URL = "http://localhost:8080/api/v1/carrito/";
-const API_ITEM_URL = "http://localhost:8080/api/v1/carrito-item/";
-const API_APLICAR = "http://localhost:8080/api/v1/aplicar";
-const API_USUARIO_ID = "http://localhost:8080/usuario-id";
+// const API_URL = "http://localhost:8080/api/v1/carrito/";
+// const API_ITEM_URL = "http://localhost:8080/api/v1/carrito-item/";
+// const API_APLICAR = "http://localhost:8080/api/v1/aplicar";
+// const API_USUARIO_ID = "http://localhost:8080/usuario-id";
+// const API_BASE = "http://localhost:8080/api/v1";
+
+const API_URL = "https://mixmatch.zapto.org/api/v1/carrito/";
+const API_ITEM_URL = "https://mixmatch.zapto.org/api/v1/carrito-item/";
+const API_APLICAR = "https://mixmatch.zapto.org/api/v1/aplicar";
+const API_USUARIO_ID = "https://mixmatch.zapto.org/usuario-id";
+const API_BASE = "https://mixmatch.zapto.org/api/v1";
 
 const Productos = ({ carritoId, onNextStep, descuento, setDescuento , total, setTotal }) => {
   const [carrito, setCarrito] = useState(null);
@@ -89,7 +96,7 @@ const handleRestarUno = async (item) => {
   if (item.cantidad <= 1) return;
   try {
     const res = await fetch(
-      `http://localhost:8080/api/v1/sumar-uno?prendaId=${item.prenda.id}&tallaId=${item.talla.id}`,
+      `${API_BASE}/sumar-uno?prendaId=${item.prenda.id}&tallaId=${item.talla.id}`,
       { method: "PUT", headers: { 'Authorization': token ? `Bearer ${token}` : '' } }
     );
     const data = await res.json();
@@ -106,7 +113,7 @@ const handleRestarUno = async (item) => {
 const handleSumarUno = async (item) => {
   try {
     const res = await fetch(
-      `http://localhost:8080/api/v1/restar-uno?prendaId=${item.prenda.id}&tallaId=${item.talla.id}`,
+      `${API_BASE}/restar-uno?prendaId=${item.prenda.id}&tallaId=${item.talla.id}`,
       { method: "PUT", headers: { 'Authorization': token ? `Bearer ${token}` : '' } }
     );
     const data = await res.json();
@@ -200,7 +207,7 @@ const handleSumarUno = async (item) => {
         try {
           // 1. Sumar el stock al eliminar el item del carrito
           await fetch(
-            `http://localhost:8080/api/v1/sumar?prendaId=${item.prenda.id}&tallaId=${item.talla.id}&cantidad=${item.cantidad}`,
+            `${API_BASE}/sumar?prendaId=${item.prenda.id}&tallaId=${item.talla.id}&cantidad=${item.cantidad}`,
             { method: "PUT", headers: { 'Authorization': token ? `Bearer ${token}` : '' } }
           );
           // 2. Eliminar el item del carrito

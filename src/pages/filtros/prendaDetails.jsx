@@ -29,6 +29,12 @@ const PrendaDetails = () => {
   const [selectedTalla, setSelectedTalla] = useState(null); // Estado para la talla seleccionada
         const token = localStorage.getItem('accessToken'); // o sessionStorage.getItem('token')
 
+// const API_BASE = "http://localhost:8080/api/v1";
+const API_BASE = "https://mixmatch.zapto.org/api/v1";
+
+// const API_BASE_BASE = "http://localhost:8080";
+const API_BASE_BASE = "https://mixmatch.zapto.org";
+
   
   const navigate = useNavigate();
 
@@ -56,14 +62,14 @@ const PrendaDetails = () => {
   useEffect(() => {
     const fetchPrenda = async () => {
       try {
-        const response = await fetch(`http://localhost:8080/api/v1/prenda/${id}`,{
+        const response = await fetch(`${API_BASE}/prenda/${id}`,{
           headers: {
             'Authorization': token ? `Bearer ${token}` : ''
           }
         });
         const data = await response.json();
         setPrenda(data.object);
-                setImagen(`http://localhost:8080/${data.object.imagen.principal}`); // Imagen inicial
+        setImagen(`${API_BASE_BASE}/${data.object.imagen.principal}`); // Imagen inicial
 
         setLoading(false);
       } catch (error) {
@@ -108,7 +114,7 @@ const handleAddToCart = async () => {
     if (!token) throw new Error("No hay token de acceso");
 
     // 1. Obtener usuarioId
-    const userRes = await axios.get("http://localhost:8080/usuario-id", {
+    const userRes = await axios.get(`${API_BASE_BASE}/usuario-id`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const usuarioId = userRes.data;
@@ -116,7 +122,7 @@ const handleAddToCart = async () => {
       let carritoId;
       let tituloCarrito = "";
     const abiertoRes = await axios.get(
-      `http://localhost:8080/api/v1/carrito/abierto/usuario/${usuarioId}`, { headers: { Authorization: `Bearer ${token}` } }
+      `${API_BASE}/carrito/abierto/usuario/${usuarioId}`, { headers: { Authorization: `Bearer ${token}` } }
     );
    if (abiertoRes.data.object && abiertoRes.data.object.length > 0) {
   carritoId = abiertoRes.data.object[0].id;
@@ -125,7 +131,7 @@ const handleAddToCart = async () => {
 } else {
       // Si no hay, crear uno nuevo
       const carritoRes = await axios.post(
-        "http://localhost:8080/api/v1/carrito",
+        `${API_BASE}/carrito`,
         { usuarioId, estado: "ABIERTO" },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -139,7 +145,7 @@ localStorage.setItem('carritoId', carritoId);
 
     // 1. Intentar incrementar cantidad si el item ya existe
     await axios.post(
-      "http://localhost:8080/api/v1/carrito-item/agregar",
+      `${API_BASE}/carrito-item/agregar`,
       null,
       {
         params: {
@@ -163,7 +169,7 @@ localStorage.setItem('carritoId', carritoId);
         const selectedTallaObj = prenda.tallas.find(t => t.talla.id === selectedTalla);
     const tallaNombre = selectedTallaObj ? selectedTallaObj.talla.nomTalla : "";
     await axios.post(
-      "http://localhost:8080/api/v1/carrito-item",
+      `${API_BASE}/carrito-item`,
       {
         carritoId,
         prendaId: Number(id),
@@ -183,7 +189,7 @@ localStorage.setItem('carritoId', carritoId);
   }
   // ACTUALIZA EL CONTADOR DEL CARRITO AQUÍ
     const cantidadRes = await axios.get(
-      `http://localhost:8080/api/v1/carrito/${carritoId}/cantidad-items`, { headers: { Authorization: `Bearer ${token}` } }
+      `${API_BASE}/carrito/${carritoId}/cantidad-items`, { headers: { Authorization: `Bearer ${token}` } }
     );
     console.log("Cantidad de items en el carrito:", cantidadRes.data);
     // Si tu backend responde { cantidad: 3 }, usa cantidadRes.data.cantidad
@@ -205,7 +211,7 @@ window.dispatchEvent(new Event('cart-updated'));
 const handleRestarUno = async (id, selectedTalla) => {
   try {
     const res = await fetch(
-      `http://localhost:8080/api/v1/restar-uno?prendaId=${id}&tallaId=${selectedTalla}`,
+      `${API_BASE}/restar-uno?prendaId=${id}&tallaId=${selectedTalla}`,
       { method: "PUT", headers: { 'Authorization': token ? `Bearer ${token}` : '' } }
     );
     const data = await res.json();
@@ -249,11 +255,11 @@ const handleRestarUno = async (id, selectedTalla) => {
                         <div
                             className="  cursor-pointer w-full h-auto"
                             onClick={() =>
-                                setImagen(`http://localhost:8080/${prenda.imagen.principal}`)
+                                setImagen(`${API_BASE_BASE}/${prenda.imagen.principal}`)
                             }
                             >
                             <img
-                                src={`http://localhost:8080/${prenda.imagen.principal}`}
+                                src={`${API_BASE_BASE}/${prenda.imagen.principal}`}
                                 className=' object-contain w-full h-auto'
                                 alt={prenda.nombre}
                             />
@@ -262,8 +268,8 @@ const handleRestarUno = async (id, selectedTalla) => {
                         {prenda.imagen.video && (
                         <div className="  cursor-pointer w-full h-auto"
                         onClick={() =>
-                            setImagen(`http://localhost:8080/${prenda.imagen.video}`)
-                            }>
+                            setImagen(`${API_BASE_BASE}/${prenda.imagen.video}`)
+                        }>
                             <img src={img} alt="GIF de ejemplo" className=" object-contain w-full h-auto"
                             />
                         </div>
@@ -272,11 +278,11 @@ const handleRestarUno = async (id, selectedTalla) => {
                         <div
                             className="  cursor-pointer w-full h-auto"
                             onClick={() =>
-                                setImagen(`http://localhost:8080/${prenda.imagen.hover}`)
+                                setImagen(`${API_BASE_BASE}/${prenda.imagen.hover}`)
                             }
                         >
                             <img
-                                src={`http://localhost:8080/${prenda.imagen.hover}`}
+                                src={`${API_BASE_BASE}/${prenda.imagen.hover}`}
                                 className=' object-contain w-full h-auto'
                                 alt={`${prenda.nombre} hover`}
                             />
@@ -285,11 +291,11 @@ const handleRestarUno = async (id, selectedTalla) => {
                         <div
                             className="  cursor-pointer w-full h-auto"
                             onClick={() =>
-                            setImagen(`http://localhost:8080/${prenda.imagen.img1}`)
+                            setImagen(`${API_BASE_BASE}/${prenda.imagen.img1}`)
                             }
                         >
                             <img
-                            src={`http://localhost:8080/${prenda.imagen.img1}`}
+                            src={`${API_BASE_BASE}/${prenda.imagen.img1}`}
                                         className=' object-contain w-full h-auto'
                             alt={`${prenda.nombre} secundaria`}
                             />
@@ -298,11 +304,11 @@ const handleRestarUno = async (id, selectedTalla) => {
                         <div
                             className="  cursor-pointer w-full h-auto"
                             onClick={() =>
-                            setImagen(`http://localhost:8080/${prenda.imagen.img2}`)
+                            setImagen(`${API_BASE_BASE}/${prenda.imagen.img2}`)
                             }
                         >
                             <img
-                            src={`http://localhost:8080/${prenda.imagen.img2}`}
+                            src={`${API_BASE_BASE}/${prenda.imagen.img2}`}
                                         className=' object-contain w-full h-auto'
                             alt={`${prenda.nombre} secundaria`}
                             />

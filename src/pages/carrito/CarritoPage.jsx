@@ -34,19 +34,24 @@ const CarritoPage = () => {
     guardarData2: false,
   });
         const token = localStorage.getItem("accessToken");
+// const API_BASE = "http://localhost:8080/api/v1";
+const API_BASE = "https://mixmatch.zapto.org/api/v1";
+
+// const API_BASE_BASE = "http://localhost:8080";
+const API_BASE_BASE = "https://mixmatch.zapto.org";
 
   
   useEffect(() => {
     const fetchDireccionGuardada = async () => {
       try {
         // Obtener usuarioId
-        const userRes = await fetch("http://localhost:8080/usuario-id", {
+        const userRes = await fetch(`${API_BASE_BASE}/usuario-id`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const usuarioId = await userRes.json();
 
         // Consultar direcciones guardadas
-        const res = await fetch(`http://localhost:8080/api/v1/direcciones/usuario/${usuarioId}`, {
+        const res = await fetch(`${API_BASE}/direcciones/usuario/${usuarioId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();

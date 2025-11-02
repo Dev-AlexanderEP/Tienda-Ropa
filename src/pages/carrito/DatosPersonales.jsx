@@ -6,6 +6,12 @@ import axios from "axios";
 const DatosPersonales = ({ datos, setDatos, onContinuar, carritoId, ventaId, setVentaId }) => {
   const [errores, setErrores] = useState({});
         const token = localStorage.getItem('accessToken'); // o sessionStorage.getItem('token')
+// const API_BASE = "http://localhost:8080/api/v1";
+const API_BASE = "https://mixmatch.zapto.org/api/v1";
+
+// const API_BASE_BASE = "http://localhost:8080";
+const API_BASE_BASE = "https://mixmatch.zapto.org";
+
 
   const handleChange = e => {
     const { name, value, type, checked } = e.target;
@@ -80,13 +86,13 @@ const DatosPersonales = ({ datos, setDatos, onContinuar, carritoId, ventaId, set
     if (Object.keys(nuevosErrores).length === 0) {
       try {
         // 1. Obtener el usuarioId
-        const userRes = await axios.get("http://localhost:8080/usuario-id", {
+        const userRes = await axios.get(`${API_BASE_BASE}/usuario-id`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const usuarioId = userRes.data; // asume que es solo el número
 
         // 2. Crear la venta
-      const ventaRes = await axios.post("http://localhost:8080/api/v1/venta", {
+      const ventaRes = await axios.post(`${API_BASE}/venta`, {
         usuarioId,
         estado: "PENDIENTE",
       }, {
@@ -97,7 +103,7 @@ const DatosPersonales = ({ datos, setDatos, onContinuar, carritoId, ventaId, set
 
       // 2.1 Verificar si hay otra venta pendiente
       const segundaPendienteRes = await axios.get(
-        `http://localhost:8080/api/v1/venta/segunda-pendiente/${usuarioId}`, {
+        `${API_BASE}/venta/segunda-pendiente/${usuarioId}`, {
           headers: { Authorization: `Bearer ${token}` }
         }
       );
@@ -105,13 +111,13 @@ const DatosPersonales = ({ datos, setDatos, onContinuar, carritoId, ventaId, set
 
       // Si existe otra venta pendiente y es diferente a la recién creada, elimínala
       if (otraVentaPendienteId && otraVentaPendienteId !== ventaId) {
-        await axios.delete(`http://localhost:8080/api/v1/venta/${otraVentaPendienteId}`,
+        await axios.delete(`${API_BASE}/venta/${otraVentaPendienteId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
       }
 
       // 3. Pasar el carrito a venta_detalle
-      await axios.post("http://localhost:8080/api/v1/carritodetalle", {
+      await axios.post(`${API_BASE}/carritodetalle`, {
         ventaId,
         carritoId,
       }, {

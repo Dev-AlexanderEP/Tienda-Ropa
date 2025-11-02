@@ -53,7 +53,7 @@ export default function Carousel() {
 
   return (
     <>
-      <div className=" relative w-full h-[80%] overflow-hidden max-sm:h-[220px] max-md:h-[350px] max-lg:h-[400px] max-xl:h-[450px] max-2xl:h-[580px]">
+      <div className=" relative w-full h-[95%] overflow-hidden max-sm:h-[220px] max-md:h-[350px] max-lg:h-[400px] max-xl:h-[450px] max-2xl:h-[580px]">
         <motion.div
           drag="x"
           dragConstraints={{

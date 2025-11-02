@@ -8,7 +8,7 @@ import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
 import { useNavigate } from "react-router-dom"; // Importa useNavigate
 
-const clientId = "310346106693-bi49g8bprbv0kpqt09n228l45mu8c3ag.apps.googleusercontent.com";
+const clientId = "609851888135-3dgcnr9mv7ifr7898p1trde1ga96ujoe.apps.googleusercontent.com";
 
 export default function Login() {
   const [password, setPassword] = useState("");
@@ -17,14 +17,20 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate(); // Inicializa useNavigate
 
+  // const API_BASE = "http://localhost:8080/api/v1";
+const API_BASE = "https://mixmatch.zapto.org/api/v1";
+
+// const API_BASE_BASE = "http://localhost:8080";
+const API_BASE_BASE = "https://mixmatch.zapto.org";
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
       const res = await axios.post(
-        "http://localhost:8080/token",
-        // "https://mixmatch.zapto.org/token",
+        // "http://localhost:8080/token",
+        `${API_BASE_BASE}/token`,
         new URLSearchParams({
           username,
           password,
@@ -62,7 +68,7 @@ export default function Login() {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.post("http://localhost:8080/google-login", {
+      const res = await axios.post(`${API_BASE_BASE}/google-login`, {
         credential: response.credential,
         clientId: clientId,
       });

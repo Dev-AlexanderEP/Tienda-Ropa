@@ -11,6 +11,13 @@ import { AnimatePresence, motion } from "framer-motion";
 
 const AllPrendas = () => {
     // ...otros imports y estados...
+        const token = localStorage.getItem('accessToken'); // o sessionStorage.getItem('token')
+  // const API_BASE = "http://localhost:8080/api/v1";
+const API_BASE = "https://mixmatch.zapto.org/api/v1";
+
+// const url = "http://localhost:8080/";
+const url = "https://mixmatch.zapto.org/";
+
 
     const [isOpenFilters, setIsOpenFilters] = React.useState(false);
 const [selectedTalla, setSelectedTalla] = React.useState("");
@@ -68,7 +75,11 @@ React.useEffect(() => {
           .split("-")
           .map(Number);
         params.append("precioMin", min);
-        params.append("precioMax", max);
+        if (selectedPrecio !== "Más de S/ 100") {
+          params.append("precioMax", max);
+        } else {
+          params.append("precioMax", 10000);
+        }
       }
 
       if (selectedDescuento) {
@@ -90,7 +101,11 @@ React.useEffect(() => {
         !selectedDescuento;
 
       if (noFiltros) {
-        const res = await fetch(`http://localhost:8080/api/v1/prendas/descuentos-aplicados-por-genero/${genero}`);
+        const res = await fetch(`${API_BASE}/prendas/descuentos-aplicados-por-genero/${genero}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         const data = await res.json();
         if (data.object) setProductos(data.object);
         else setProductos([]);
@@ -98,7 +113,11 @@ React.useEffect(() => {
       }
 
       // Si hay algún filtro, usa la API filtrada
-      const res = await fetch(`http://localhost:8080/api/v1/todas-prendas-filtradas?${params.toString()}`);
+      const res = await fetch(`${API_BASE}/todas-prendas-filtradas?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       console.log(res.url);
       const data = await res.json();
 
@@ -122,33 +141,50 @@ React.useEffect(() => {
 React.useEffect(() => {
 
     if (genero) {
-        
-      fetch(`http://localhost:8080/api/v1/prendas/tallas-por-genero/${genero}`)
+
+      fetch(`${API_BASE}/prendas/tallas-por-genero/${genero}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
         .then((res) => res.json())
         .then((data) => {
+          console.log(data);
           if (data.object) setTallas(data.object);
         })
         .catch(() => setTallas([]));
 
-      fetch(`http://localhost:8080/api/v1/prendas/marcas-por-genero/${genero}`)
+      fetch(`${API_BASE}/prendas/marcas-por-genero/${genero}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
         .then((res) => res.json())
         .then((data) => {
           if (data.object) setMarcas(data.object);
         })
         .catch(() => setMarcas([]));
 
-        fetch(`http://localhost:8080/api/v1/prendas/categorias-por-genero/${genero}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.object && Array.isArray(data.object)) {
-          setCategorias(data.object);
-        } else {
+        fetch(`${API_BASE}/prendas/categorias-por-genero/${genero}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.object && Array.isArray(data.object)) {
+              setCategorias(data.object);
+            } else {
           setCategorias([]);
         }
       })
       .catch(() => setCategorias([]));
 
-                fetch(`http://localhost:8080/api/v1/prendas/estadisticas-precios-por-genero/${genero}`)
+                fetch(`${API_BASE}/prendas/estadisticas-precios-por-genero/${genero}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
           .then((res) => res.json())
           .then((data) => {
             if (data.object && Array.isArray(data.object[0])) {
@@ -173,20 +209,28 @@ React.useEffect(() => {
           .catch(() => setRangosPrecios([]));
 
 
-          fetch(`http://localhost:8080/api/v1/prendas/descuentos-aplicados-por-genero/${genero}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.object) setProductos(data.object);
-        console.log(data);
-      })
-      .catch(() => setProductos([]));
+      //     fetch(`${API_BASE}/prendas/descuentos-aplicados-por-genero/${genero}`, {
+      //       headers: {
+      //         Authorization: `Bearer ${token}`,
+      //       },
+      //     })
+      //       .then((res) => res.json())
+      //       .then((data) => {
+      //         if (data.object) setProductos(data.object);
+      //         console.log(data);
+      //       })
+      // .catch(() => setProductos([]));
   }
 }, [ genero]);
 
   // 3. Agrega este List.Item y Collapse donde quieras mostrar el filtro de descuentos
   React.useEffect(() => {
     if (genero) {
-      fetch(`http://localhost:8080/api/v1/prendas/descuentos-por-genero/${genero}`)
+      fetch(`${API_BASE}/prendas/descuentos-por-genero/${genero}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
         .then((res) => res.json())
         .then((data) => {
           // Suponiendo que data.object es un array de descuentos aplicados
@@ -212,13 +256,17 @@ React.useEffect(() => {
 React.useEffect(() => {
   const query = busqueda.trim();
   if (!query) {
-     fetch(`http://localhost:8080/api/v1/prendas/descuentos-aplicados-por-genero/${genero}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.object) setProductos(data.object);
-        console.log(data);
-      })
-      .catch(() => setProductos([]));
+    //  fetch(`${API_BASE}/prendas/descuentos-aplicados-por-genero/${genero}`, {
+    //    headers: {
+    //      Authorization: `Bearer ${token}`,
+    //    },
+    //  })
+    //   .then((res) => res.json())
+    //   .then((data) => {
+    //     if (data.object) setProductos(data.object);
+    //     console.log(data);
+    //   })
+    //   .catch(() => setProductos([]));
     return;
   }; // No sobreescribas productos si no hay búsqueda
 
@@ -228,8 +276,11 @@ React.useEffect(() => {
       nombre: query,
       genero: genero,
     });
-    fetch(`http://localhost:8080/api/v1/prendas/buscar-por-nombre-genero?${params.toString()}`, {
+    fetch(`${API_BASE}/prendas/buscar-por-nombre-genero?${params.toString()}`, {
       signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     })
       .then(res => res.json())
       .then(data => {
@@ -247,7 +298,7 @@ React.useEffect(() => {
   };
 }, [busqueda, genero]);
 
-  const url = "http://localhost:8080/";
+  // const url = "http://localhost:8080/";
     return (
       <div className="w-full flex flex-col gap-5">
         <WhatsAppButton />

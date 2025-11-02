@@ -15,6 +15,8 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+   // const API_BASE = "http://localhost:8080/api/v1";
+const API_BASE = "https://mixmatch.zapto.org/api/v1";
   const handleRegister = async (e) => {
   e.preventDefault();
   setError(null);
@@ -33,7 +35,7 @@ export default function Register() {
 
   setLoading(true);
   try {
-    await axios.post("http://localhost:8080/api/v1/usuario", {
+    await axios.post(`${API_BASE}/usuario`, {
       nombreUsuario,
       email,
       contrasenia,

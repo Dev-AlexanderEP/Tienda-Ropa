@@ -16,6 +16,11 @@ const FormCreditCart = ({ amount, ventaId, metodoId, carritoId, datos }) => {
     ccv: "",
   });
         const token = localStorage.getItem('accessToken'); // o sessionStorage.getItem('token')
+  // const API_BASE = "http://localhost:8080/api/v1";
+const API_BASE = "https://mixmatch.zapto.org/api/v1";
+
+// const API_BASE_BASE = "http://localhost:8080";
+const API_BASE_BASE = "https://mixmatch.zapto.org";
 
   // Nuevo estado para guardar el envioId
   const [envioId, setEnvioId] = useState(null);
@@ -58,7 +63,7 @@ const FormCreditCart = ({ amount, ventaId, metodoId, carritoId, datos }) => {
         metodoId,
         estado: "PAGADO"
       };
-      await axios.post("http://localhost:8080/api/v1/pago", pagoData, {
+      await axios.post(`${API_BASE}/pago`, pagoData, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -116,19 +121,19 @@ const FormCreditCart = ({ amount, ventaId, metodoId, carritoId, datos }) => {
   const actualizarVentaPagada = async () => {
     try {
       // 1. Obtener usuarioId
-      const userRes = await axios.get("http://localhost:8080/usuario-id", {
+      const userRes = await axios.get(`${API_BASE_BASE}/usuario-id`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const usuarioId = userRes.data;
 
       // 2. Obtener la venta pendiente
-      const ventaPendienteRes = await axios.get(`http://localhost:8080/api/v1/venta/segunda-pendiente/${usuarioId}`, {
+      const ventaPendienteRes = await axios.get(`${API_BASE}/venta/segunda-pendiente/${usuarioId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const ventaId = ventaPendienteRes.data.object;
 
       // 3. Actualizar la venta a PAGADO
-      await axios.put(`http://localhost:8080/api/v1/venta/${ventaId}`, {
+      await axios.put(`${API_BASE}/venta/${ventaId}`, {
         id: ventaId,
         usuarioId,
         estado: "PAGADO"
@@ -144,12 +149,12 @@ const FormCreditCart = ({ amount, ventaId, metodoId, carritoId, datos }) => {
     try {
       const token = localStorage.getItem("accessToken");
       // 1. Obtener usuarioId
-      const userRes = await axios.get("http://localhost:8080/usuario-id", {
+      const userRes = await axios.get(`${API_BASE_BASE}/usuario-id`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const usuarioId = userRes.data;
       console.log("usuarioId para carrito:", carritoId);
-      await axios.put(`http://localhost:8080/api/v1/carrito/${carritoId}`, {
+      await axios.put(`${API_BASE}/carrito/${carritoId}`, {
         usuarioId,
         estado: "COMPLETADO"
       }, {        headers: { Authorization: `Bearer ${token}` }
@@ -164,7 +169,7 @@ const FormCreditCart = ({ amount, ventaId, metodoId, carritoId, datos }) => {
   const registrarDatosPersonalesYEnvio = async () => {
     try {
       const token = localStorage.getItem("accessToken");
-      const userRes = await axios.get("http://localhost:8080/usuario-id", {
+      const userRes = await axios.get(`${API_BASE_BASE}/usuario-id`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const usuarioId = userRes.data;
@@ -183,7 +188,7 @@ const FormCreditCart = ({ amount, ventaId, metodoId, carritoId, datos }) => {
         telefono: datos.telefono,
         email: datos.correo,
       };
-      const datosPersonalesRes = await axios.post("http://localhost:8080/api/v1/dato-personal", datosPersonalesBody, {
+      const datosPersonalesRes = await axios.post(`${API_BASE}/dato-personal`, datosPersonalesBody, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const datosPersonalesId = datosPersonalesRes.data.object.id;
@@ -211,7 +216,7 @@ const FormCreditCart = ({ amount, ventaId, metodoId, carritoId, datos }) => {
         trackingNumber: randomTracking,
       };
       // Guardamos el envio y retornamos el id del envio creado
-      const envioRes = await axios.post("http://localhost:8080/api/v1/envio", envioBody, {
+      const envioRes = await axios.post(`${API_BASE}/envio`, envioBody, {
         headers: { Authorization: `Bearer ${token}` }
       });
       // Asegúrate de que el backend retorna el id en envioRes.data.object.id
@@ -228,7 +233,7 @@ const FormCreditCart = ({ amount, ventaId, metodoId, carritoId, datos }) => {
   const guardarDireccionSiEsNecesario = async () => {
     const token = localStorage.getItem("accessToken");
     // 1. Obtener usuarioId
-    const userRes = await axios.get("http://localhost:8080/usuario-id", {
+    const userRes = await axios.get(`${API_BASE_BASE}/usuario-id`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const usuarioId = userRes.data;
@@ -246,7 +251,7 @@ const FormCreditCart = ({ amount, ventaId, metodoId, carritoId, datos }) => {
       telefono: datos.telefono,
     };
     // 3. Guardar la dirección
-    await axios.post("http://localhost:8080/api/v1/direccion", direccionBody, {
+    await axios.post(`${API_BASE}/direccion`, direccionBody, {
       headers: { Authorization: `Bearer ${token}` }
     });
   };
@@ -258,7 +263,7 @@ const FormCreditCart = ({ amount, ventaId, metodoId, carritoId, datos }) => {
       return;
     }
     try {
-      await axios.get(`http://localhost:8080/api/v1/registrar?id=${envioIdParam}`, {
+      await axios.get(`${API_BASE}/registrar?id=${envioIdParam}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
     } catch (error) {

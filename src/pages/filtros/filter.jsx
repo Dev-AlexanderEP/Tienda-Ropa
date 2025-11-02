@@ -28,7 +28,8 @@ const FilterPage = () => {
 
 
         const token = localStorage.getItem('accessToken'); // o sessionStorage.getItem('token')
-
+// const API_BASE = "http://localhost:8080/api/v1";
+const API_BASE = "https://mixmatch.zapto.org/api/v1";
   //prendas
   const [productos, setProductos] = React.useState([]);
 
@@ -62,6 +63,7 @@ const FilterPage = () => {
 
         // Agrega los filtros seleccionados a los parámetros
         if (categoria) params.append("categoria", categoria);
+        if (genero) params.append("genero", genero); // ← AGREGAR ESTA LÍNEA
         if (selectedTalla) params.append("talla", selectedTalla);
         if (selectedMarca) params.append("marca", selectedMarca);
 
@@ -73,7 +75,11 @@ const FilterPage = () => {
             .split("-")
             .map(Number);
           params.append("precioMin", min);
+          if (selectedPrecio !== "Más de S/ 100") {
           params.append("precioMax", max);
+        } else {
+          params.append("precioMax", 10000);
+        }
         }
 
         // Extrae los valores de descuento mínimo y máximo del rango seleccionado
@@ -89,7 +95,7 @@ const FilterPage = () => {
 
         // Llama a la API con los parámetros construidos
         const res = await fetch(
-          `http://localhost:8080/api/v1/prendas-filtradas?${params.toString()}`,
+          `${API_BASE}/prendas-filtradas?${params.toString()}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -98,7 +104,8 @@ const FilterPage = () => {
           }
         );
         const data = await res.json();
-console.log(`http://localhost:8080/api/v1/prendas-filtradas?${params.toString()}`)
+console.log(`${API_BASE}/prendas-filtradas?${params.toString()}`)
+console.log("Productos filtrados:", data);
         // Actualiza el estado con los productos obtenidos
         if (data.object) {
           // Elimina duplicados basados en el ID
@@ -127,7 +134,7 @@ console.log(`http://localhost:8080/api/v1/prendas-filtradas?${params.toString()}
 
   React.useEffect(() => {
     if (categoria && genero) {
-      fetch(`http://localhost:8080/api/v1/prenda-tallas/${categoria}`, {
+      fetch(`${API_BASE}/prenda-tallas/${categoria}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -138,7 +145,7 @@ console.log(`http://localhost:8080/api/v1/prendas-filtradas?${params.toString()}
         })
         .catch(() => setTallas([]));
 
-      fetch(`http://localhost:8080/api/v1/prenda-marcas/${categoria}`, {
+      fetch(`${API_BASE}/prenda-marcas/${categoria}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -149,7 +156,7 @@ console.log(`http://localhost:8080/api/v1/prendas-filtradas?${params.toString()}
         })
         .catch(() => setMarcas([]));
 
-      fetch(`http://localhost:8080/api/v1/prenda-precios/${categoria}`, {
+      fetch(`${API_BASE}/prenda-precios/${categoria}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -177,28 +184,29 @@ console.log(`http://localhost:8080/api/v1/prendas-filtradas?${params.toString()}
         })
         .catch(() => setRangosPrecios([]));
 
-      fetch(
-        `http://localhost:8080/api/v1/prendas/descuentos-aplicados?categoria=${categoria}&genero=${genero}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.object) setProductos(data.object);
-          console.log(data);
-          console.log("hola")
-        })
-        .catch(() => setProductos([]));
+      // Este fetch se removió porque el useEffect principal ya maneja los productos filtrados
+      // fetch(
+      //   `http://localhost:8080/api/v1/prendas/descuentos-aplicados?categoria=${categoria}&genero=${genero}`,
+      //   {
+      //     headers: {
+      //       Authorization: `Bearer ${token}`,
+      //     },
+      //   }
+      // )
+      //   .then((res) => res.json())
+      //   .then((data) => {
+      //     if (data.object) setProductos(data.object);
+      //     console.log(data);
+      //     console.log("hola")
+      //   })
+      //   .catch(() => setProductos([]));
     }
   }, [categoria, genero]);
 
   // 3. Agrega este List.Item y Collapse donde quieras mostrar el filtro de descuentos
   React.useEffect(() => {
     if (categoria) {
-      fetch(`http://localhost:8080/api/v1/prendas/todos-descuentos/${categoria}`, {
+      fetch(`${API_BASE}/prendas/todos-descuentos/${categoria}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -227,22 +235,8 @@ console.log(`http://localhost:8080/api/v1/prendas-filtradas?${params.toString()}
   React.useEffect(() => {
     const query = busqueda.trim();
     if (!query) {
-      fetch(
-        `http://localhost:8080/api/v1/prendas/descuentos-aplicados?categoria=${categoria}&genero=${genero}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
-        .then((res) => res.json())
-        .then((data) => {
-          if (Array.isArray(data)) setProductos(data);
-          else if (data && data.object) setProductos(data.object);
-          else setProductos([]);
-        })
-        .catch(() => setProductos([]));
-      return; // Importante: salir del useEffect para no buscar por nombre
+      // Si no hay búsqueda, no hacemos nada (el primer useEffect ya maneja los productos)
+      return;
     }
     const controller = new AbortController();
     const timeout = setTimeout(() => {
@@ -251,7 +245,7 @@ console.log(`http://localhost:8080/api/v1/prendas-filtradas?${params.toString()}
         categoria: categoria,
         genero: genero,
       });
-      fetch(`http://localhost:8080/api/v1/prendas/buscar?${params.toString()}`, {
+      fetch(`${API_BASE}/prendas/buscar?${params.toString()}`, {
         signal: controller.signal,
         headers: {
           Authorization: `Bearer ${token}`,
@@ -275,7 +269,6 @@ console.log(`http://localhost:8080/api/v1/prendas-filtradas?${params.toString()}
     };
   }, [busqueda, categoria, genero]);
 
-  const url = "/";
   return (
     <div className="w-full flex flex-col gap-5">
       <WhatsAppButton />

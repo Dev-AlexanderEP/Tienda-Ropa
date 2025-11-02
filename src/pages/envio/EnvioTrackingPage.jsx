@@ -38,7 +38,9 @@ export default function EnvioTrackingPage() {
   const [data, setData] = useState(null);
   const [step, setStep] = useState(0);
   const [error, setError] = useState("");
-
+        const token = localStorage.getItem('accessToken'); // o sessionStorage.getItem('token')
+ // const API_BASE = "http://localhost:8080/api/v1";
+const API_BASE = "https://mixmatch.zapto.org/api/v1";
   // Si la ruta es con tracking en url, busca automáticamente
   useEffect(() => {
     if (trackingFromUrl) {
@@ -52,7 +54,12 @@ export default function EnvioTrackingPage() {
     setData(null);
     try {
       const res = await axios.get(
-        `http://localhost:8080/api/v1/envio/tracking/${codigo.trim()}`
+        `${API_BASE}/envio/tracking/${codigo.trim()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setData(res.data);
       setStep(STEP_MAP[res.data.estado] ?? 0);
