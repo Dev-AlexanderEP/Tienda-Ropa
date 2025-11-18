@@ -17,7 +17,10 @@ export default function Register() {
 
    // const API_BASE = "http://localhost:8080/api/v1";
 const API_BASE = "https://mixmatch.zapto.org/api/v1";
-  const handleRegister = async (e) => {
+const API_BASE_BASE = "https://mixmatch.zapto.org";
+
+
+const handleRegister = async (e) => {
   e.preventDefault();
   setError(null);
 
@@ -35,24 +38,67 @@ const API_BASE = "https://mixmatch.zapto.org/api/v1";
 
   setLoading(true);
   try {
-    await axios.post(`${API_BASE}/usuario`, {
-      nombreUsuario,
-      email,
-      contrasenia,
-      // rol se asigna por defecto en el backend
-    });
-    alert("Registro exitoso. Ahora puedes iniciar sesión.");
-    navigate("/login");
-  } catch (err) {
-    setError(
-      err.response?.data?.error ||
-        "Error al registrar. Intenta con otro usuario o correo    ."
+    // ✅ 1. PRIMERO HACER LOGIN CON DATOS ESTÁTICOS PARA OBTENER EL TOKEN
+    const loginRes = await axios.post(
+      `${API_BASE_BASE}/token`,
+      new URLSearchParams({
+        username: "admin@example.com",
+        password: "123456",
+        grantType: "password",
+        withRefreshToken: true,
+      }),
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
     );
+
+    const { accessToken, refreshToken } = loginRes.data;
+
+
+
+    console.log("Token obtenido:", accessToken);
+
+    // ✅ 3. AHORA HACER EL REGISTRO CON EL TOKEN EN EL HEADER
+    await axios.post(
+      `${API_BASE}/usuario`,
+      {
+        nombreUsuario,
+        email,
+        contrasenia,
+        // rol se asigna por defecto en el backend
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`, // ✅ TOKEN EN EL HEADER
+        },
+      }
+    );
+
+    
+    // Redirección inteligente
+    const redirectPath = localStorage.getItem("redirectAfterLogin");
+    if (redirectPath) {
+      localStorage.removeItem("redirectAfterLogin");
+      navigate(redirectPath);
+    } else {
+      navigate("/"); // Redirigir al home
+    }
+  } catch (err) {
+    // ✅ MANEJO DE ERRORES
+    if (err.response?.status === 409) {
+      setError("El usuario o email ya existe. Intenta con otros datos.");
+    } else if (err.response?.data?.error) {
+      setError(err.response.data.error);
+    } else {
+      setError("Error al registrar. Intenta con otro usuario o correo.");
+    }
+    console.error("Error en el registro:", err.response ? err.response.data : err.message);
   } finally {
     setLoading(false);
   }
 };
-
   return (
     <>
       <div className="h-screen w-screen overflow-hidden ">
