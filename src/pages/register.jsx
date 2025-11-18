@@ -62,7 +62,7 @@ const handleRegister = async (e) => {
 
     // ✅ 3. AHORA HACER EL REGISTRO CON EL TOKEN EN EL HEADER
     await axios.post(
-      `${API_BASE}/usuarios`,
+      `${API_BASE}/usuarios/create`,
       {
         nombreUsuario,
         email,
