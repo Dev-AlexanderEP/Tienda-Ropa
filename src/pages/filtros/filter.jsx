@@ -796,12 +796,12 @@ console.log("Productos filtrados:", data);
                     href={`/${genero}/${categoria}/${producto.id}/${producto.descuentoAplicado}`}
                   >
                     <img
-                      src={"http://localhost:8080/" + producto.imagenPrincipal}
+                      src={"https://mixmatch.zapto.org/" + producto.imagenPrincipal}
                       alt={producto.nombre}
                       className="w-full object-center  transition-opacity duration-300 absolute top-0 left-0 z-10 group-hover:opacity-0"
                     />
                     <img
-                      src={"http://localhost:8080/" + producto.imagenHover}
+                      src={"https://mixmatch.zapto.org/" + producto.imagenHover}
                       alt={producto.nombre + " hover"}
                       className="w-full object-contain  transition-opacity duration-300 obsolute  top-0 left-0 z-20 opacity-0 group-hover:opacity-100"
                     />
