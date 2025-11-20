@@ -98,7 +98,6 @@ const API_BASE = "https://mixmatch.zapto.org/api/v1";
           `${API_BASE}/prendas-filtradas?${params.toString()}`,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json'
             },
           }
@@ -134,33 +133,21 @@ console.log("Productos filtrados:", data);
 
   React.useEffect(() => {
     if (categoria && genero) {
-      fetch(`${API_BASE}/prenda-tallas/${categoria}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      fetch(`${API_BASE}/prenda-tallas/${categoria}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.object) setTallas(data.object);
         })
         .catch(() => setTallas([]));
 
-      fetch(`${API_BASE}/prenda-marcas/${categoria}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      fetch(`${API_BASE}/prenda-marcas/${categoria}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.object) setMarcas(data.object);
         })
         .catch(() => setMarcas([]));
 
-      fetch(`${API_BASE}/prenda-precios/${categoria}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      fetch(`${API_BASE}/prenda-precios/${categoria}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.object && Array.isArray(data.object[0])) {
@@ -206,11 +193,7 @@ console.log("Productos filtrados:", data);
   // 3. Agrega este List.Item y Collapse donde quieras mostrar el filtro de descuentos
   React.useEffect(() => {
     if (categoria) {
-      fetch(`${API_BASE}/prendas/todos-descuentos/${categoria}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      fetch(`${API_BASE}/prendas/todos-descuentos/${categoria}`)
         .then((res) => res.json())
         .then((data) => {
           // Suponiendo que data.object es un array de descuentos aplicados
@@ -247,9 +230,6 @@ console.log("Productos filtrados:", data);
       });
       fetch(`${API_BASE}/prendas/buscar?${params.toString()}`, {
         signal: controller.signal,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       })
         .then((res) => res.json())
         .then((data) => {
