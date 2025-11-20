@@ -63,9 +63,12 @@ const API_BASE_BASE = "https://mixmatch.zapto.org";
         metodoId,
         estado: "PAGADO"
       };
-      await axios.post(`${API_BASE}/pago`, pagoData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+       await axios.post(`${API_BASE}/pago`, pagoData, {
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      }
+    });
 
       // --- 2. Actualizar venta ---
       await actualizarVentaPagada();
@@ -128,7 +131,7 @@ const API_BASE_BASE = "https://mixmatch.zapto.org";
 
       // 2. Obtener la venta pendiente
       const ventaPendienteRes = await axios.get(`${API_BASE}/venta/segunda-pendiente/${usuarioId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
       });
       const ventaId = ventaPendienteRes.data.object;
 
@@ -137,7 +140,7 @@ const API_BASE_BASE = "https://mixmatch.zapto.org";
         id: ventaId,
         usuarioId,
         estado: "PAGADO"
-      }, {        headers: { Authorization: `Bearer ${token}` }
+      }, {        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
       });
     } catch (error) {
       Swal.fire("Error", "No se pudo actualizar la venta a PAGADO", "error");
