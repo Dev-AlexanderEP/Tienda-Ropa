@@ -28,6 +28,14 @@ const API_BASE_BASE = "https://mixmatch.zapto.org";
   const handleChange = e => {
     const { name, value } = e.target;
     // Formatear el número de tarjeta con separación cada 4 dígitos
+
+    // ✅ Validar que el nombre solo contenga letras y espacios
+  if (name === "name") {
+    const onlyLetters = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
+    setForm(prev => ({ ...prev, name: onlyLetters }));
+    return;
+  }
+  
     if (name === "card") {
       const onlyNums = value.replace(/\D/g, "").slice(0, 16);
       let formatted = onlyNums.match(/.{1,4}/g)?.join("-") ?? "";
@@ -279,7 +287,7 @@ const API_BASE_BASE = "https://mixmatch.zapto.org";
     <form className="flex flex-col gap-4 w-full mt-5 p-4 bg-white rounded shadow" onSubmit={handleSubmit}>
       <Typography variant="" className="text-lg font-bold mb-2 font-Poppins">Pago con tarjeta de crédito</Typography>
       
-      <Typography as="label" htmlFor="credit-name" variant="small" className="font-Poppins  font-medium">Nombre en la tarjeta</Typography>
+      <Typography as="label" htmlFor="credit-name" variant="small" className="font-Poppins  font-medium">Nombre del Titular</Typography>
       <Input
         id="credit-name"
         label=""
