@@ -7,7 +7,7 @@ import FormCreditCart from "./pagos/FormCreditCart";
 const MetodoPago = ({ onSeleccionar, total, ventaId, carritoId, datos }) => {
   const [metodos, setMetodos] = useState([]);
   const [contenidoExtra, setContenidoExtra] = useState(
-    <FormCreditCart amount={total} ventaId={ventaId} metodoId={3} carritoId={carritoId} datos={datos} />
+    <FormCreditCart amount={total} ventaId={ventaId} metodoId={1} carritoId={carritoId} datos={datos} />
   );
         const token = localStorage.getItem('accessToken'); // o sessionStorage.getItem('token')
 // const API_BASE = "http://localhost:8080/api/v1";
