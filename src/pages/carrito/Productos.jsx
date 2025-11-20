@@ -246,7 +246,7 @@ const handleSumarUno = async (item) => {
                         <td className="py-4 border-b border-slate-600 ">
                             <div className="flex items-center flex-col gap-4">
                             <img
-                                src={`http://localhost:8080/${item.prenda.imagen.principal}`}
+                                src={`https://mixmatch.zapto.org/${item.prenda.imagen.principal}`}
                                 alt={item.prenda.nombre}
                                 className="w-16 h-20 object-cover rounded max-sm:hidden"
                             />
