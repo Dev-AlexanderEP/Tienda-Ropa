@@ -101,11 +101,7 @@ React.useEffect(() => {
         !selectedDescuento;
 
       if (noFiltros) {
-        const res = await fetch(`${API_BASE}/prendas/descuentos-aplicados-por-genero/${genero}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await fetch(`${API_BASE}/prendas/descuentos-aplicados-por-genero/${genero}`);
         const data = await res.json();
         if (data.object) setProductos(data.object);
         else setProductos([]);
@@ -113,11 +109,7 @@ React.useEffect(() => {
       }
 
       // Si hay algún filtro, usa la API filtrada
-      const res = await fetch(`${API_BASE}/todas-prendas-filtradas?${params.toString()}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(`${API_BASE}/todas-prendas-filtradas?${params.toString()}`);
       console.log(res.url);
       const data = await res.json();
 
@@ -142,11 +134,7 @@ React.useEffect(() => {
 
     if (genero) {
 
-      fetch(`${API_BASE}/prendas/tallas-por-genero/${genero}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      fetch(`${API_BASE}/prendas/tallas-por-genero/${genero}`)
         .then((res) => res.json())
         .then((data) => {
           console.log(data);
@@ -154,22 +142,14 @@ React.useEffect(() => {
         })
         .catch(() => setTallas([]));
 
-      fetch(`${API_BASE}/prendas/marcas-por-genero/${genero}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      fetch(`${API_BASE}/prendas/marcas-por-genero/${genero}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.object) setMarcas(data.object);
         })
         .catch(() => setMarcas([]));
 
-        fetch(`${API_BASE}/prendas/categorias-por-genero/${genero}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
+        fetch(`${API_BASE}/prendas/categorias-por-genero/${genero}`)
           .then((res) => res.json())
           .then((data) => {
             if (data.object && Array.isArray(data.object)) {
@@ -180,11 +160,7 @@ React.useEffect(() => {
       })
       .catch(() => setCategorias([]));
 
-                fetch(`${API_BASE}/prendas/estadisticas-precios-por-genero/${genero}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
+                fetch(`${API_BASE}/prendas/estadisticas-precios-por-genero/${genero}`)
           .then((res) => res.json())
           .then((data) => {
             if (data.object && Array.isArray(data.object[0])) {
@@ -226,11 +202,7 @@ React.useEffect(() => {
   // 3. Agrega este List.Item y Collapse donde quieras mostrar el filtro de descuentos
   React.useEffect(() => {
     if (genero) {
-      fetch(`${API_BASE}/prendas/descuentos-por-genero/${genero}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      fetch(`${API_BASE}/prendas/descuentos-por-genero/${genero}`)
         .then((res) => res.json())
         .then((data) => {
           // Suponiendo que data.object es un array de descuentos aplicados
@@ -278,9 +250,6 @@ React.useEffect(() => {
     });
     fetch(`${API_BASE}/prendas/buscar-por-nombre-genero?${params.toString()}`, {
       signal: controller.signal,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
     })
       .then(res => res.json())
       .then(data => {
