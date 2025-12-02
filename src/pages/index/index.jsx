@@ -32,8 +32,8 @@ export default function Index() {
           <Frame3 />
           <Frame4 />
           <Frame5 />
-          <Frame6 />
-          <Frame7 />
+          {/* <Frame6 /> */}
+          {/* <Frame7 /> */}
           <Frame8 />
           <FooterC />
     </>

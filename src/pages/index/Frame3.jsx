@@ -1,139 +1,26 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import Swal from "sweetalert2";
 
-const products = [
-  {
-    id: 1,
-    color: "bg-gray-200",
-    discount: 45,
-    brand: "Topitop mujer",
-    name: "Jogger Mujer Valencia Grey Fit Poly Htr",
-    price: 43.95,
-    oldPrice: 79.90,
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    id: 2,
-    color: "bg-gray-400",
-    discount: 45,
-    brand: "Topitop mujer",
-    name: "Jogger Mujer Fio Negro",
-    price: 49.45,
-    oldPrice: 89.90,
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    id: 3,
-    color: "bg-gray-400",
-    discount: 45,
-    brand: "Topitop mujer",
-    name: "Jogger Mujer Fio Negro",
-    price: 49.45,
-    oldPrice: 89.90,
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    id: 4,
-    color: "bg-gray-200",
-    discount: 35,
-    brand: "Topitop hombre",
-    name: "Polo Hombre Basic Fit Blanco",
-    price: 29.95,
-    oldPrice: 45.00,
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    id: 5,
-    color: "bg-gray-300",
-    discount: 50,
-    brand: "Topitop mujer",
-    name: "Casaca Mujer Urban Negro",
-    price: 65.99,
-    oldPrice: 130.00,
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    id: 6,
-    color: "bg-gray-500",
-    discount: 30,
-    brand: "Topitop hombre",
-    name: "Jogger Hombre Relaxed Azul",
-    price: 39.99,
-    oldPrice: 57.00,
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    id: 7,
-    color: "bg-gray-200",
-    discount: 45,
-    brand: "Topitop mujer",
-    name: "Pantalón Mujer Chino Beige",
-    price: 52.00,
-    oldPrice: 95.00,
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    id: 8,
-    color: "bg-gray-400",
-    discount: 20,
-    brand: "Topitop hombre",
-    name: "Casaca Hombre Denim Azul",
-    price: 89.90,
-    oldPrice: 112.00,
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    id: 9,
-    color: "bg-gray-300",
-    discount: 60,
-    brand: "Topitop mujer",
-    name: "Blusa Mujer Summer Rosa",
-    price: 25.00,
-    oldPrice: 62.00,
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    id: 10,
-    color: "bg-gray-200",
-    discount: 15,
-    brand: "Topitop mujer",
-    name: "Falda Mujer Midi Negra",
-    price: 38.50,
-    oldPrice: 45.50,
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    id: 11,
-    color: "bg-gray-500",
-    discount: 40,
-    brand: "Topitop hombre",
-    name: "Short Hombre Sport Gris",
-    price: 35.00,
-    oldPrice: 58.00,
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    id: 12,
-    color: "bg-gray-400",
-    discount: 25,
-    brand: "Topitop mujer",
-    name: "Vestido Mujer Casual Azul",
-    price: 55.00,
-    oldPrice: 73.00,
-    sizes: ["S", "M", "L", "XL"],
-  },
-];
+const API_BASE = "https://mixmatch.zapto.org/api/v1";
+const API_BASE_BASE = "https://mixmatch.zapto.org";
 
 export default function Frame3() {
-  const [hovered, setHovered] = React.useState(null);
-  const [index, setIndex] = React.useState(0);
-  const [direction, setDirection] = React.useState(0);
+  const [hovered, setHovered] = useState(null);
+  const [index, setIndex] = useState(0);
+  const [direction, setDirection] = useState(0);
+  const [productos, setProductos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedTallas, setSelectedTallas] = useState({}); // {productoId: tallaId}
+  const navigate = useNavigate();
 
   // Responsive: mostrar 3 en desktop, 1 en md y menos
-  const [cardsPerView, setCardsPerView] = React.useState(3);
+  const [cardsPerView, setCardsPerView] = useState(3);
 
-  React.useEffect(() => {
+  useEffect(() => {
     function handleResize() {
       if (window.innerWidth < 768) {
         setCardsPerView(1);
@@ -146,12 +33,30 @@ export default function Frame3() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const TALLAS_HEIGHT = 110;
+  // Cargar productos desde la API (Novedades - Hombre)
+  useEffect(() => {
+    const fetchNovedades = async () => {
+      try {
+        // Usamos la API de prendas filtradas para "hombre"
+        const res = await fetch(`${API_BASE}/prendas/descuentos-aplicados-por-genero/hombre`);
+        const data = await res.json();
+        if (data.object && Array.isArray(data.object)) {
+          // Limitamos a 12 productos para el carrusel
+          setProductos(data.object.slice(0, 12));
+        } else {
+          setProductos([]);
+        }
+        setLoading(false);
+      } catch (error) {
+        console.error("Error al cargar novedades:", error);
+        setProductos([]);
+        setLoading(false);
+      }
+    };
 
-  const infoVariants = {
-    initial: { y: 0 },
-    hover: { y: -TALLAS_HEIGHT },
-  };
+    fetchNovedades();
+  }, []);
+
   const tallasVariants = {
     initial: { opacity: 0, y: 30 },
     hover: {
@@ -191,7 +96,7 @@ export default function Frame3() {
     }),
   };
 
-  const TOTAL = products.length;
+  const TOTAL = productos.length;
 
   // LOOPING LOGIC
   const handlePrev = () => {
@@ -212,20 +117,194 @@ export default function Frame3() {
     }
   };
 
+  // Función para verificar si hay usuario logeado
+  const isUserLoggedIn = () => {
+    return !!localStorage.getItem("accessToken");
+  };
+
+  // Función para agregar al carrito
+  const handleAddToCart = async (producto) => {
+    const selectedTalla = selectedTallas[producto.id];
+
+    if (!selectedTalla) {
+      Swal.fire({
+        icon: "warning",
+        title: "Selecciona una talla",
+        text: "Por favor, selecciona una talla antes de agregar al carrito.",
+        showConfirmButton: false,
+        timer: 2000,
+      });
+      return;
+    }
+
+    if (!isUserLoggedIn()) {
+      localStorage.setItem("redirectAfterLogin", window.location.pathname + window.location.search);
+      Swal.fire({
+        icon: "info",
+        title: "Necesitas logearte",
+        text: "Por favor, inicia sesión para agregar productos al carrito.",
+        showConfirmButton: false,
+        timer: 2000,
+      });
+      setTimeout(() => {
+        navigate("/login");
+      }, 1000);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) throw new Error("No hay token de acceso");
+
+      // 1. Obtener usuarioId
+      const userRes = await axios.get(`${API_BASE_BASE}/usuario-id`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const usuarioId = userRes.data;
+
+      let carritoId;
+      const abiertoRes = await axios.get(`${API_BASE}/carrito/abierto/usuario/${usuarioId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (abiertoRes.data.object && abiertoRes.data.object.length > 0) {
+        carritoId = abiertoRes.data.object[0].id;
+        console.log("Carrito abierto encontrado:", carritoId);
+      } else {
+        // Si no hay, crear uno nuevo
+        const carritoRes = await axios.post(
+          `${API_BASE}/carrito`,
+          { usuarioId, estado: "ABIERTO" },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        carritoId = carritoRes.data.object.id;
+      }
+      localStorage.setItem("carritoId", carritoId);
+
+      try {
+        console.log("selectedTalla (debe ser id):", selectedTalla);
+
+        // 1. Intentar incrementar cantidad si el item ya existe
+        await axios.post(`${API_BASE}/carrito-item/agregar`, null, {
+          params: {
+            carritoId,
+            prendaId: Number(producto.id),
+            tallaId: selectedTalla,
+          },
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        Swal.fire({
+          icon: "success",
+          title: "Cantidad incrementada",
+          showConfirmButton: false,
+          timer: 1500,
+        });
+      } catch {
+        // Si no existe el item, lo creamos
+        const precioConDescuento = (producto.precio * (1 - producto.descuentoAplicado / 100)).toFixed(2);
+
+        // Buscar el nombre de la talla
+        const tallaObj = producto.tallas?.find((t) => t.talla.id === selectedTalla);
+        const tallaNombre = tallaObj ? tallaObj.talla.nomTalla : "";
+
+        await axios.post(
+          `${API_BASE}/carrito-item`,
+          {
+            carritoId,
+            prendaId: Number(producto.id),
+            talla: tallaNombre,
+            cantidad: 1,
+            precioUnitario: Number(precioConDescuento),
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        handleRestarUno(producto.id, selectedTalla);
+        Swal.fire({
+          icon: "success",
+          title: "Producto agregado al carrito",
+          showConfirmButton: false,
+          timer: 1500,
+        });
+      }
+
+      // ACTUALIZA EL CONTADOR DEL CARRITO AQUÍ
+      const cantidadRes = await axios.get(`${API_BASE}/carrito/${carritoId}/cantidad-items`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      console.log("Cantidad de items en el carrito:", cantidadRes.data);
+      const cantidad = cantidadRes.data.object;
+      localStorage.setItem("cartCount", String(cantidad || 0));
+      window.dispatchEvent(new Event("cart-updated"));
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "No se pudo agregar el producto al carrito.",
+      });
+      console.error(error);
+    }
+  };
+
+  const handleRestarUno = async (prendaId, tallaId) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const res = await fetch(`${API_BASE}/restar-uno?prendaId=${prendaId}&tallaId=${tallaId}`, {
+        method: "PUT",
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+      });
+      const data = await res.json();
+      if (!res.ok || !data.object) {
+        Swal.fire("Sin stock", data.mensaje || "No hay stock suficiente.", "warning");
+        return;
+      }
+    } catch {
+      Swal.fire("Error", "No se pudo actualizar el stock.", "error");
+    }
+  };
+
+  // Función para seleccionar talla
+  const handleSelectTalla = (productoId, tallaId) => {
+    setSelectedTallas((prev) => ({
+      ...prev,
+      [productoId]: tallaId,
+    }));
+  };
+
   // Mostrar sólo los necesarios (loop seguro)
   let visibleProducts = [];
-  for (let i = 0; i < cardsPerView; i++) {
-    visibleProducts.push(products[(index + i) % TOTAL]);
+  if (TOTAL > 0) {
+    for (let i = 0; i < cardsPerView; i++) {
+      visibleProducts.push(productos[(index + i) % TOTAL]);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="w-full h-screen bg-white flex items-center justify-center">
+        <span className="text-2xl font-bold font-[Poppins] text-[#222]">Cargando novedades...</span>
+      </div>
+    );
+  }
+
+  if (productos.length === 0) {
+    return (
+      <div className="w-full h-screen bg-white flex items-center justify-center">
+        <span className="text-2xl font-bold font-[Poppins] text-[#222]">No hay novedades disponibles</span>
+      </div>
+    );
   }
 
   return (
     <div className="w-full h-screen bg-white px-0 pt-6 relative overflow-x-hidden">
       {/* Header */}
       <div className="flex justify-between items-center px-4 md:px-10">
-        <span className="text-3xl font-bold font-[Poppins] text-[#222]">Novedades</span>
-        <button className="text-sm font-[Poppins] font-semibold text-black hover:underline flex items-center gap-1">
+        <span className="text-3xl font-bold font-[Poppins] text-[#222]">Novedades Hombre</span>
+        <a
+          href="/hombre"
+          className="text-sm font-[Poppins] font-semibold text-black hover:underline flex items-center gap-1"
+        >
           VER TODO <span className="text-lg">&#8594;</span>
-        </button>
+        </a>
       </div>
 
       {/* Product Cards Carousel */}
@@ -259,10 +338,13 @@ export default function Frame3() {
                 // idx absoluto para hover
                 const globalIdx = (index + idx) % TOTAL;
                 const isHovered = hovered === globalIdx;
+                const precioConDescuento = (product.precio * (1 - product.descuentoAplicado / 100)).toFixed(2);
+                const selectedTallaForProduct = selectedTallas[product.id];
+
                 return (
                   <motion.div
                     key={product.id}
-                    className={`relative rounded-lg shadow-none flex flex-col justify-between pb-0 ${
+                    className={` border border-black relative rounded-lg shadow-none flex flex-col justify-between pb-0 ${
                       cardsPerView === 1 ? "w-full max-w-xs mx-auto" : "w-1/3"
                     } h-full group border bg-white overflow-hidden`}
                     onHoverStart={() => setHovered(globalIdx)}
@@ -274,102 +356,59 @@ export default function Frame3() {
                     }}
                   >
                     {/* Top icons */}
-                    <div className="absolute top-4 left-4 z-10">
+                    <div className="absolute top-4 left-4 z-30">
                       <div className="bg-black text-white text-base font-[Poppins] font-bold px-3 py-1 rounded-full">
-                        {product.discount}%
+                        {product.descuentoAplicado}%
                       </div>
                     </div>
-                    <div className="absolute top-4 right-4 z-10">
+                    <div className="absolute top-4 right-4 z-30">
                       <button className="p-1 rounded-full border-none outline-none bg-white/60 hover:bg-gray-200">
                         <Heart className="h-6 w-6 stroke-2 text-black" />
                       </button>
                     </div>
-                    {/* Image placeholder */}
-                    <div className={`w-full h-[320px] md:h-[420px] ${product.color} rounded-lg`} />
-                    {/* Card Bottom: Info */}
-                    <motion.div
-                      className="px-5 pt-3 pb-2 min-h-20 relative z-10 bg-white"
-                      variants={infoVariants}
-                      animate={isHovered ? "hover" : "initial"}
-                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                      style={{
-                        boxShadow: isHovered ? "0 0 0 0" : undefined,
-                        minHeight: "88px",
-                      }}
+                    {/* Image with hover effect */}
+                    <div>
+
+                    </div>
+                    <a
+                      href={`/hombre/${product.categoria?.nomCategoria || "categoria"}/${product.id}/${
+                        product.descuentoAplicado
+                      }`}
+                      className="relative group w-full h-[350px] md:h-full overflow-hidden rounded-lg"
                     >
+                      <img
+                        src={`${API_BASE_BASE}/${product.imagenPrincipal}`}
+                        alt={product.nombre}
+                        className="w-full h-full  object-cover transition-opacity duration-300 absolute top-0 left-0 z-10 group-hover:opacity-0"
+                      />
+                      <img
+                        src={`${API_BASE_BASE}/${product.imagenHover}`}
+                        alt={product.nombre + " hover"}
+                        className="w-full h-full object-cover transition-opacity duration-300 absolute top-0 left-0 z-20 opacity-0 group-hover:opacity-100"
+                      />
+                    </a>
+                    {/* Card Bottom: Info - SIN ANIMACION */}
+                    <div className="px-5 pt-3 pb-2 relative z-10 bg-white">
                       <div className="text-[13px] font-[Poppins] font-medium text-[#222]">
-                        {product.brand}
+                        {product.marca?.nomMarca || "Marca"}
                       </div>
                       <div className="text-base font-[Poppins] text-[#222] font-semibold truncate">
-                        {product.name}
+                        {product.nombre}
                       </div>
                       <div className="flex justify-between items-end mt-1">
                         <div className="flex gap-2 items-center">
-                          {product.oldPrice && (
+                          {product.descuentoAplicado > 0 && (
                             <span className="text-sm text-gray-400 line-through font-[Poppins] font-semibold">
-                              S/ {product.oldPrice}
+                              S/ {product.precio}
                             </span>
                           )}
                           <span className="text-lg font-bold font-[Poppins] text-[#222]">
-                            S/ {product.price}
+                            S/ {precioConDescuento}
                           </span>
                         </div>
                       </div>
-                    </motion.div>
-                    {/* Hover action: Tallas */}
-                    <AnimatePresence>
-                      {isHovered && (
-                        <motion.div
-                          className="absolute left-0 bottom-0 w-full bg-white border-t px-5 py-4 z-20"
-                          variants={tallasVariants}
-                          initial="initial"
-                          animate="hover"
-                          exit="exit"
-                          style={{
-                            borderBottomLeftRadius: 12,
-                            borderBottomRightRadius: 12,
-                            boxShadow: "0 4px 16px 0 rgba(0,0,0,0.06)",
-                            height: TALLAS_HEIGHT,
-                          }}
-                        >
-                          {/* Tallas */}
-                          <div className="mb-3 flex gap-2 items-center">
-                            <span className="text-sm block font-[Poppins] mr-2">
-                              Talla
-                            </span>
-                            {product.sizes.map((s, i) => (
-                              <span
-                                key={s}
-                                className={`inline-flex items-center justify-center w-7 h-7 border border-black rounded-full text-sm font-semibold font-[Poppins] ${
-                                  i === 0
-                                    ? "bg-black text-white"
-                                    : "bg-white text-black"
-                                }`}
-                              >
-                                {s}
-                              </span>
-                            ))}
-                          </div>
-                          {/* Agregar al carrito */}
-                          <motion.button
-                            whileHover={{
-                              backgroundColor: "#111",
-                              color: "#fff",
-                              borderColor: "#111",
-                              scale: 1.04,
-                            }}
-                            transition={{
-                              type: "spring",
-                              stiffness: 400,
-                              damping: 20,
-                            }}
-                            className="w-full py-2 bg-black text-white rounded-none font-bold font-[Poppins] text-base tracking-wide transition-colors"
-                          >
-                            AGREGAR AL CARRITO
-                          </motion.button>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    </div>
+                    
                   </motion.div>
                 );
               })}

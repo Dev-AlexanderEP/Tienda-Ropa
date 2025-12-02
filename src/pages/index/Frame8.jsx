@@ -30,11 +30,7 @@ export default function Frame8() {
         <p className="text-sm sm:text-base md:text-lg text-[#222] font-[Poppins] mb-6 md:mb-7 leading-relaxed max-w-xl">
           En nuestra tienda online puedes comprar con total confianza, si deseas devolver o cambiar una prenda por otra talla, puedes hacerlo de manera simple y rápida.
         </p>
-        <button
-          className="bg-black text-white font-bold font-[Poppins] max-md:text-[12px] text-sm sm:text-base px-6 sm:px-7 py-3 rounded-none shadow-none outline-none transition hover:bg-[#222] w-fit"
-        >
-          VER TÉRMINOS Y CONDICIONES
-        </button>
+        
       </div>
       {/* Steps */}
       <div
