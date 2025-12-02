@@ -62,11 +62,7 @@ const API_BASE_BASE = "https://mixmatch.zapto.org";
   useEffect(() => {
     const fetchPrenda = async () => {
       try {
-        const response = await fetch(`${API_BASE}/prenda/${id}`,{
-          headers: {
-            'Authorization': token ? `Bearer ${token}` : ''
-          }
-        });
+        const response = await fetch(`${API_BASE}/prenda/${id}`);
         const data = await response.json();
         setPrenda(data.object);
         setImagen(`${API_BASE_BASE}/${data.object.imagen.principal}`); // Imagen inicial
