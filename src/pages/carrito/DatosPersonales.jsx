@@ -16,11 +16,20 @@ const API_BASE_BASE = "https://mixmatch.zapto.org";
   const handleChange = e => {
     const { name, value, type, checked } = e.target;
 
-    // Limitar caracteres para nombre, apellidos y correo (100)
-    if (
-      (name === "nombre" || name === "apellidos" || name === "correo") &&
-      value.length > 50
-    ) {
+    // Validación para nombre y apellidos: solo letras y espacios
+    if (name === "nombre" || name === "apellidos") {
+      const soloLetras = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
+      if (soloLetras.length > 50) return;
+      setDatos(prev => ({
+        ...prev,
+        [name]: soloLetras,
+      }));
+      setErrores(prev => ({ ...prev, [name]: false }));
+      return;
+    }
+
+    // Limitar caracteres para correo (100)
+    if (name === "correo" && value.length > 50) {
       return;
     }
 
