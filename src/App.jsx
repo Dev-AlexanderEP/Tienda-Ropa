@@ -5,7 +5,7 @@ import { Suspense, lazy } from "react";
 import FilterPage from './pages/FilterPage';
 import PrendaDetails from './pages/PrendaDetailsPage';
 import CarritoPage from './pages/CarritoPage';
-import EnvioTrackingPage from './pages/envio/EnvioTrackingPage';
+import EnvioTrackingPage from './pages/EnvioTrackingPage';
 const Index = lazy(() => import("./pages/HomePage"));
 const Login = lazy(() => import("./pages/LoginPage"));
 const Register = lazy(() => import("./pages/RegisterPage"));

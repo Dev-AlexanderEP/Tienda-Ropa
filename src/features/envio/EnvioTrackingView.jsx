@@ -31,7 +31,7 @@ const STEP_MAP = {
   ENTREGADO: 4,
 };
 
-export default function EnvioTrackingPage() {
+export default function EnvioTrackingView() {
   const params = useParams();
   const trackingFromUrl = params.tracking || ""; // puede ser undefined o string
   const [tracking, setTracking] = useState(trackingFromUrl);
