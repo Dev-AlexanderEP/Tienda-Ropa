@@ -7,8 +7,8 @@ import PrendaDetails from './pages/filtros/prendaDetails';
 import CarritoPage from './pages/CarritoPage';
 import EnvioTrackingPage from './pages/envio/EnvioTrackingPage';
 const Index = lazy(() => import("./pages/index/index"));
-const Login = lazy(() => import("./pages/login"));
-const Register = lazy(() => import("./pages/register"));
+const Login = lazy(() => import("./pages/LoginPage"));
+const Register = lazy(() => import("./pages/RegisterPage"));
 
 import { mujerLinks, mujerbasicosLinks, mujeraccesoriosLinks } from './components/navbaar/DataNav';
 import { hombreLinks, hombrebasicosLinks, hombreaccesoriosLinks } from './components/navbaar/DataNav';
