@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Typography, Input, Textarea, Button, Checkbox } from "@material-tailwind/react";
-import departamentosData from "./departamentos.json";
-import provinciasData from "./provincias.json";
-import distritosData from "./distritos.json";
+import departamentosData from "./data/departamentos.json";
+import provinciasData from "./data/provincias.json";
+import distritosData from "./data/distritos.json";
 
 const Direccion = ({ datos, setDatos, onContinuar }) => {
   const [departamentos, setDepartamentos] = useState([]);

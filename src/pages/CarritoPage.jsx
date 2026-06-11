@@ -3,13 +3,13 @@ import { useState, useEffect } from "react"; // <--- AGREGA useEffect AQUÍ
 
 import { Typography ,Tabs, IconButton,Timeline, Button } from "@material-tailwind/react";
 import { ArrowLeftFromLine, ShoppingCart, ScrollText, Truck, Wallet    } from 'lucide-react';
-import Productos from "./Productos"; // Asegúrate de que la ruta sea correcta
-import ResumenCompra from "./ResumenCompra";
-import DatosPersonales from "./DatosPersonales";
-import Direccion from "./Direccion";
-import MetodoPago from "./MetodoPago"; // Asegúrate de que la ruta sea correcta
+import Productos from "../features/carrito/Productos";
+import ResumenCompra from "../features/carrito/ResumenCompra";
+import DatosPersonales from "../features/carrito/DatosPersonales";
+import Direccion from "../features/carrito/Direccion";
+import MetodoPago from "../features/pagos/MetodoPago";
 import { useNavigate } from "react-router-dom";
-import FooterC from "../../components/footer/Footer";
+import FooterC from "../components/footer/Footer";
 const CarritoPage = () => {
   const { id } = useParams();
   const [total, setTotal] = useState(0);

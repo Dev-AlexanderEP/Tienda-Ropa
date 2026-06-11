@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import FilterPage from './pages/filtros/filter';
 import PrendaDetails from './pages/filtros/prendaDetails';
-import CarritoPage from './pages/carrito/CarritoPage';
+import CarritoPage from './pages/CarritoPage';
 import EnvioTrackingPage from './pages/envio/EnvioTrackingPage';
 const Index = lazy(() => import("./pages/index/index"));
 const Login = lazy(() => import("./pages/login"));

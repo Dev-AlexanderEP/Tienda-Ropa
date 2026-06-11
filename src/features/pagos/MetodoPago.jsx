@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Button, Typography } from "@material-tailwind/react";
 import axios from "axios";
-import PaypalButton from "./pagos/PaypalButton";
-import FormCreditCart from "./pagos/FormCreditCart";
+import PaypalButton from "./PaypalButton";
+import FormCreditCart from "./FormCreditCart";
 
 const MetodoPago = ({ onSeleccionar, total, ventaId, carritoId, datos }) => {
   const [metodos, setMetodos] = useState([]);
