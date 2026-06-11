@@ -16,7 +16,7 @@ import Navbar from "../../components/navbaar/NavBar";
 import NavBarResponsive from "../../components/navbaar/NavBarResponsive";
 import { AnimatePresence, motion } from "framer-motion";
 
-const FilterPage = () => {
+const FilterView = () => {
   // ...otros imports y estados...
 
   const [isOpenFilters, setIsOpenFilters] = React.useState(false);
@@ -842,4 +842,4 @@ console.log("Productos filtrados:", data);
   );
 };
 
-export default FilterPage;
+export default FilterView;

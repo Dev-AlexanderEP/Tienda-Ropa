@@ -2,8 +2,8 @@ import './index.css';
 import './assets/fonts/fonts.css';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Suspense, lazy } from "react";
-import FilterPage from './pages/filtros/filter';
-import PrendaDetails from './pages/filtros/prendaDetails';
+import FilterPage from './pages/FilterPage';
+import PrendaDetails from './pages/PrendaDetailsPage';
 import CarritoPage from './pages/CarritoPage';
 import EnvioTrackingPage from './pages/envio/EnvioTrackingPage';
 const Index = lazy(() => import("./pages/index/index"));
@@ -17,7 +17,7 @@ import CategoryContent from './components/navbaar/categorias/CategoryContent';
 import BasicosContent from './components/navbaar/categorias/BasicosContent';
 import InfantilContent from './components/navbaar/categorias/InfantilContent';
 
-import AllPrendas from './pages/filtros/AllPrendas';
+import AllPrendas from './pages/AllPrendasPage';
 function App() {
   return (
     <>

@@ -14,7 +14,7 @@ import WhatsAppButton from "../../components/contact/WhatsAppButton";
 
 
 
-const PrendaDetails = () => {
+const PrendaDetailView = () => {
   const { id,descuento } = useParams(); // Obtener el ID de la prenda desde la URL
     const location = useLocation();
 
@@ -549,4 +549,4 @@ const handleRestarUno = async (id, selectedTalla) => {
 
 };
 
-export default PrendaDetails;
+export default PrendaDetailView;

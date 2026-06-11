@@ -9,7 +9,7 @@ import Navbar from "../../components/navbaar/NavBar";
 import NavBarResponsive from "../../components/navbaar/NavBarResponsive";
 import { AnimatePresence, motion } from "framer-motion";
 
-const AllPrendas = () => {
+const AllPrendasView = () => {
     // ...otros imports y estados...
         const token = localStorage.getItem('accessToken'); // o sessionStorage.getItem('token')
   // const API_BASE = "http://localhost:8080/api/v1";
@@ -813,4 +813,4 @@ React.useEffect(() => {
 
 
 
-export default AllPrendas;
+export default AllPrendasView;
