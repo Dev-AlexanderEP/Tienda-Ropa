@@ -11,7 +11,7 @@ import Frame5 from "./Frame5";
 import Frame6 from "./Frame6";
 import Frame7 from "./Frame7";
 import Frame8 from "./Frame8";
-export default function Index() {
+export default function HomeView() {
 
 
   return (
