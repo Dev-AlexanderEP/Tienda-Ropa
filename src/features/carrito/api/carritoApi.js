@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getUsuarioId } from "../auth/api/userApi";
+import { getUsuarioId } from "../../auth/api/userApi";
 import { API_BASE } from "../../../config/api";
 
 const authHeaders = () => ({
