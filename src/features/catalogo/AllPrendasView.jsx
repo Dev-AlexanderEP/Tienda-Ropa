@@ -5,18 +5,22 @@ import {  ChevronDown  } from 'lucide-react';
 import WhatsAppButton from "../../components/contact/WhatsAppButton";
 import { Search } from "lucide-react";
 
-import Navbar from "../../components/navbaar/NavBar";
 import NavBarResponsive from "../../components/navbaar/NavBarResponsive";
 import { AnimatePresence, motion } from "framer-motion";
+import {
+  getPrendasPorGenero,
+  getPrendasFiltradas,
+  getTallasPorGenero,
+  getMarcasPorGenero,
+  getCategoriasPorGenero,
+  getEstadisticasPreciosPorGenero,
+  getDescuentosPorGenero,
+  buscarPorNombreGenero,
+} from "./api/catalogoApi";
+
+const BASE_URL = "https://mixmatch.zapto.org";
 
 const AllPrendasView = () => {
-    // ...otros imports y estados...
-        const token = localStorage.getItem('accessToken'); // o sessionStorage.getItem('token')
-  // const API_BASE = "http://localhost:8080/api/v1";
-const API_BASE = "https://mixmatch.zapto.org/api/v1";
-
-// const url = "http://localhost:8080/";
-const url = "https://mixmatch.zapto.org/";
 
 
     const [isOpenFilters, setIsOpenFilters] = React.useState(false);
@@ -101,26 +105,16 @@ React.useEffect(() => {
         !selectedDescuento;
 
       if (noFiltros) {
-        const res = await fetch(`${API_BASE}/prendas/descuentos-aplicados-por-genero/${genero}`);
-        const data = await res.json();
-        if (data.object) setProductos(data.object);
-        else setProductos([]);
+        const data = await getPrendasPorGenero(genero);
+        setProductos(data);
         return;
       }
 
-      // Si hay algún filtro, usa la API filtrada
-      const res = await fetch(`${API_BASE}/todas-prendas-filtradas?${params.toString()}`);
-      console.log(res.url);
-      const data = await res.json();
-
-      if (data.object) {
-        const productosUnicos = data.object.filter(
-          (producto, index, self) => self.findIndex((p) => p.id === producto.id) === index
-        );
-        setProductos(productosUnicos);
-      } else {
-        setProductos([]);
-      }
+      const data = await getPrendasFiltradas(params.toString());
+      const productosUnicos = data.filter(
+        (producto, index, self) => self.findIndex((p) => p.id === producto.id) === index
+      );
+      setProductos(productosUnicos);
     } catch (error) {
       console.error("Error al cargar productos:", error);
       setProductos([]);
@@ -134,92 +128,47 @@ React.useEffect(() => {
 
     if (genero) {
 
-      fetch(`${API_BASE}/prendas/tallas-por-genero/${genero}`)
-        .then((res) => res.json())
-        .then((data) => {
-          console.log(data);
-          if (data.object) setTallas(data.object);
-        })
-        .catch(() => setTallas([]));
-
-      fetch(`${API_BASE}/prendas/marcas-por-genero/${genero}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.object) setMarcas(data.object);
-        })
-        .catch(() => setMarcas([]));
-
-        fetch(`${API_BASE}/prendas/categorias-por-genero/${genero}`)
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.object && Array.isArray(data.object)) {
-              setCategorias(data.object);
-            } else {
-          setCategorias([]);
-        }
-      })
-      .catch(() => setCategorias([]));
-
-                fetch(`${API_BASE}/prendas/estadisticas-precios-por-genero/${genero}`)
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.object && Array.isArray(data.object[0])) {
-              const [minimo, , maximo] = data.object[0]; // [min, promedio, max]
-              const rangos = [
-                { label: "S/ 20 - S/ 40", min: 20, max: 40 },
-                { label: "S/ 40 - S/ 60", min: 40, max: 60 },
-                { label: "S/ 60 - S/ 80", min: 60, max: 80 },
-                { label: "S/ 80 - S/ 100", min: 80, max: 100 },
-                { label: "Más de S/ 100", min: 100, max: Infinity },
-              ];
-              // Filtra solo los rangos necesarios según el mínimo y máximo
-              const visibles = rangos.filter(
+      getTallasPorGenero(genero).then(setTallas).catch(() => setTallas([]));
+      getMarcasPorGenero(genero).then(setMarcas).catch(() => setMarcas([]));
+      getCategoriasPorGenero(genero).then(setCategorias).catch(() => setCategorias([]));
+      getEstadisticasPreciosPorGenero(genero)
+        .then((object) => {
+          if (object && Array.isArray(object[0])) {
+            const [minimo, , maximo] = object[0];
+            const rangos = [
+              { label: "S/ 20 - S/ 40", min: 20, max: 40 },
+              { label: "S/ 40 - S/ 60", min: 40, max: 60 },
+              { label: "S/ 60 - S/ 80", min: 60, max: 80 },
+              { label: "S/ 80 - S/ 100", min: 80, max: 100 },
+              { label: "Más de S/ 100", min: 100, max: Infinity },
+            ];
+            setRangosPrecios(
+              rangos.filter(
                 (r) =>
                   (minimo <= r.max && maximo >= r.min) ||
                   (minimo >= r.min && minimo <= r.max) ||
                   (maximo >= r.min && maximo <= r.max)
-              );
-              setRangosPrecios(visibles);
-            }
-          })
-          .catch(() => setRangosPrecios([]));
-
-
-      //     fetch(`${API_BASE}/prendas/descuentos-aplicados-por-genero/${genero}`, {
-      //       headers: {
-      //         Authorization: `Bearer ${token}`,
-      //       },
-      //     })
-      //       .then((res) => res.json())
-      //       .then((data) => {
-      //         if (data.object) setProductos(data.object);
-      //         console.log(data);
-      //       })
-      // .catch(() => setProductos([]));
+              )
+            );
+          }
+        })
+        .catch(() => setRangosPrecios([]));
   }
 }, [ genero]);
 
   // 3. Agrega este List.Item y Collapse donde quieras mostrar el filtro de descuentos
   React.useEffect(() => {
     if (genero) {
-      fetch(`${API_BASE}/prendas/descuentos-por-genero/${genero}`)
-        .then((res) => res.json())
-        .then((data) => {
-          // Suponiendo que data.object es un array de descuentos aplicados
-          if (data.object && Array.isArray(data.object)) {
-            const maxDescuento = Math.max(...data.object, 0);
-            const rangos = [
-              { label: "0% - 20%", min: 0, max: 20 },
-              { label: "20% - 40%", min: 20, max: 40 },
-              { label: "40% - 60%", min: 40, max: 60 },
-              { label: "60% - 80%", min: 60, max: 80 },
-            ];
-            // Solo muestra los rangos que aplican según el máximo descuento
-            const visibles = rangos.filter(
-              (r) => maxDescuento >= r.min
-            );
-            setRangosDescuentos(visibles);
-          }
+      getDescuentosPorGenero(genero)
+        .then((object) => {
+          const maxDescuento = Math.max(...object, 0);
+          const rangos = [
+            { label: "0% - 20%", min: 0, max: 20 },
+            { label: "20% - 40%", min: 20, max: 40 },
+            { label: "40% - 60%", min: 40, max: 60 },
+            { label: "60% - 80%", min: 60, max: 80 },
+          ];
+          setRangosDescuentos(rangos.filter((r) => maxDescuento >= r.min));
         })
         .catch(() => setRangosDescuentos([]));
     }
@@ -227,47 +176,17 @@ React.useEffect(() => {
 
 React.useEffect(() => {
   const query = busqueda.trim();
-  if (!query) {
-    //  fetch(`${API_BASE}/prendas/descuentos-aplicados-por-genero/${genero}`, {
-    //    headers: {
-    //      Authorization: `Bearer ${token}`,
-    //    },
-    //  })
-    //   .then((res) => res.json())
-    //   .then((data) => {
-    //     if (data.object) setProductos(data.object);
-    //     console.log(data);
-    //   })
-    //   .catch(() => setProductos([]));
-    return;
-  }; // No sobreescribas productos si no hay búsqueda
+  if (!query) return;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => {
-    const params = new URLSearchParams({
-      nombre: query,
-      genero: genero,
-    });
-    fetch(`${API_BASE}/prendas/buscar-por-nombre-genero?${params.toString()}`, {
-      signal: controller.signal,
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) setProductos(data);
-        else if (data && data.object && Array.isArray(data.object)) setProductos(data.object);
-        else setProductos([]);
-      })
-      .catch(error => {
-        if (error.name !== "AbortError") setProductos([]);
-      });
+    buscarPorNombreGenero(query, genero, controller.signal)
+      .then(setProductos)
+      .catch((error) => { if (error.name !== "AbortError") setProductos([]); });
   }, 350);
-  return () => {
-    clearTimeout(timeout);
-    controller.abort();
-  };
+  return () => { clearTimeout(timeout); controller.abort(); };
 }, [busqueda, genero]);
 
-  // const url = "http://localhost:8080/";
     return (
       <div className="w-full flex flex-col gap-5">
         <WhatsAppButton />
@@ -760,12 +679,12 @@ React.useEffect(() => {
                             <Card key={producto.id} className=" flex flex-col items-start shadow-md  rounded-none relative ">
                                <a className="relative group  mb-2 "  href={`/${genero}/${producto.categoria}/${producto.id}/${producto.descuentoAplicado}`}>
                                     <img
-                                    src={url + producto.imagenPrincipal}
+                                    src={`${BASE_URL}/${producto.imagenPrincipal}`}
                                     alt={producto.nombre}
                                     className="w-full object-center  transition-opacity duration-300 absolute top-0 left-0 z-10 group-hover:opacity-0"
                                     />
                                     <img
-                                    src={url + producto.imagenHover}
+                                    src={`${BASE_URL}/${producto.imagenHover}`}
                                     alt={producto.nombre + ' hover'}
                                     className="w-full object-contain  transition-opacity duration-300 obsolute  top-0 left-0 z-20 opacity-0 group-hover:opacity-100"
                                     />

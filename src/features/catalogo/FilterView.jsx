@@ -12,9 +12,16 @@ import { ChevronDown } from "lucide-react";
 import WhatsAppButton from "../../components/contact/WhatsAppButton";
 import { Search } from "lucide-react";
 
-import Navbar from "../../components/navbaar/NavBar";
 import NavBarResponsive from "../../components/navbaar/NavBarResponsive";
 import { AnimatePresence, motion } from "framer-motion";
+import {
+  getPrendasFiltradasPorCategoria,
+  getTallasPorCategoria,
+  getMarcasPorCategoria,
+  getPreciosPorCategoria,
+  getDescuentosPorCategoria,
+  buscarPorNombreCategoria,
+} from "./api/catalogoApi";
 
 const FilterView = () => {
   // ...otros imports y estados...
@@ -27,9 +34,6 @@ const FilterView = () => {
   const [busqueda, setBusqueda] = React.useState("");
 
 
-        const token = localStorage.getItem('accessToken'); // o sessionStorage.getItem('token')
-// const API_BASE = "http://localhost:8080/api/v1";
-const API_BASE = "https://mixmatch.zapto.org/api/v1";
   //prendas
   const [productos, setProductos] = React.useState([]);
 
@@ -93,29 +97,11 @@ const API_BASE = "https://mixmatch.zapto.org/api/v1";
           params.append("descMax", max);
         }
 
-        // Llama a la API con los parámetros construidos
-        const res = await fetch(
-          `${API_BASE}/prendas-filtradas?${params.toString()}`,
-          {
-            headers: {
-              'Content-Type': 'application/json'
-            },
-          }
+        const data = await getPrendasFiltradasPorCategoria(params.toString());
+        const productosUnicos = data.filter(
+          (producto, index, self) => self.findIndex((p) => p.id === producto.id) === index
         );
-        const data = await res.json();
-console.log(`${API_BASE}/prendas-filtradas?${params.toString()}`)
-console.log("Productos filtrados:", data);
-        // Actualiza el estado con los productos obtenidos
-        if (data.object) {
-          // Elimina duplicados basados en el ID
-          const productosUnicos = data.object.filter(
-            (producto, index, self) =>
-              self.findIndex((p) => p.id === producto.id) === index
-          );
-          setProductos(productosUnicos);
-        } else {
-          setProductos([]);
-        }
+        setProductos(productosUnicos);
       } catch (error) {
         console.error("Error al cargar productos:", error);
         setProductos([]);
@@ -133,25 +119,12 @@ console.log("Productos filtrados:", data);
 
   React.useEffect(() => {
     if (categoria && genero) {
-      fetch(`${API_BASE}/prenda-tallas/${categoria}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.object) setTallas(data.object);
-        })
-        .catch(() => setTallas([]));
-
-      fetch(`${API_BASE}/prenda-marcas/${categoria}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.object) setMarcas(data.object);
-        })
-        .catch(() => setMarcas([]));
-
-      fetch(`${API_BASE}/prenda-precios/${categoria}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.object && Array.isArray(data.object[0])) {
-            const [minimo, , maximo] = data.object[0]; // [min, promedio, max]
+      getTallasPorCategoria(categoria).then(setTallas).catch(() => setTallas([]));
+      getMarcasPorCategoria(categoria).then(setMarcas).catch(() => setMarcas([]));
+      getPreciosPorCategoria(categoria)
+        .then((object) => {
+          if (object && Array.isArray(object[0])) {
+            const [minimo, , maximo] = object[0];
             const rangos = [
               { label: "S/ 20 - S/ 40", min: 20, max: 40 },
               { label: "S/ 40 - S/ 60", min: 40, max: 60 },
@@ -159,94 +132,49 @@ console.log("Productos filtrados:", data);
               { label: "S/ 80 - S/ 100", min: 80, max: 100 },
               { label: "Más de S/ 100", min: 100, max: Infinity },
             ];
-            // Filtra solo los rangos necesarios según el mínimo y máximo
-            const visibles = rangos.filter(
-              (r) =>
-                (minimo <= r.max && maximo >= r.min) ||
-                (minimo >= r.min && minimo <= r.max) ||
-                (maximo >= r.min && maximo <= r.max)
+            setRangosPrecios(
+              rangos.filter(
+                (r) =>
+                  (minimo <= r.max && maximo >= r.min) ||
+                  (minimo >= r.min && minimo <= r.max) ||
+                  (maximo >= r.min && maximo <= r.max)
+              )
             );
-            setRangosPrecios(visibles);
           }
         })
         .catch(() => setRangosPrecios([]));
-
-      // Este fetch se removió porque el useEffect principal ya maneja los productos filtrados
-      // fetch(
-      //   `http://localhost:8080/api/v1/prendas/descuentos-aplicados?categoria=${categoria}&genero=${genero}`,
-      //   {
-      //     headers: {
-      //       Authorization: `Bearer ${token}`,
-      //     },
-      //   }
-      // )
-      //   .then((res) => res.json())
-      //   .then((data) => {
-      //     if (data.object) setProductos(data.object);
-      //     console.log(data);
-      //     console.log("hola")
-      //   })
-      //   .catch(() => setProductos([]));
     }
   }, [categoria, genero]);
 
   // 3. Agrega este List.Item y Collapse donde quieras mostrar el filtro de descuentos
   React.useEffect(() => {
     if (categoria) {
-      fetch(`${API_BASE}/prendas/todos-descuentos/${categoria}`)
-        .then((res) => res.json())
-        .then((data) => {
-          // Suponiendo que data.object es un array de descuentos aplicados
-          if (data.object && Array.isArray(data.object)) {
-            const maxDescuento = Math.max(...data.object, 0);
-            const rangos = [
-              { label: "0% - 20%", min: 0, max: 20 },
-              { label: "20% - 40%", min: 20, max: 40 },
-              { label: "40% - 60%", min: 40, max: 60 },
-              { label: "60% - 80%", min: 60, max: 80 },
-            ];
-            // Solo muestra los rangos que aplican según el máximo descuento
-            const visibles = rangos.filter((r) => maxDescuento >= r.min);
-            setRangosDescuentos(visibles);
-          }
+      getDescuentosPorCategoria(categoria)
+        .then((object) => {
+          const maxDescuento = Math.max(...object, 0);
+          const rangos = [
+            { label: "0% - 20%", min: 0, max: 20 },
+            { label: "20% - 40%", min: 20, max: 40 },
+            { label: "40% - 60%", min: 40, max: 60 },
+            { label: "60% - 80%", min: 60, max: 80 },
+          ];
+          setRangosDescuentos(rangos.filter((r) => maxDescuento >= r.min));
         })
         .catch(() => setRangosDescuentos([]));
     }
   }, [categoria]);
 
-  // Debounce para evitar demasiadas peticiones
   React.useEffect(() => {
     const query = busqueda.trim();
-    if (!query) {
-      // Si no hay búsqueda, no hacemos nada (el primer useEffect ya maneja los productos)
-      return;
-    }
+    if (!query) return;
+
     const controller = new AbortController();
     const timeout = setTimeout(() => {
-      const params = new URLSearchParams({
-        nombre: query,
-        categoria: categoria,
-        genero: genero,
-      });
-      fetch(`${API_BASE}/prendas/buscar?${params.toString()}`, {
-        signal: controller.signal,
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          console.log("Respuesta de backend:", data);
-          if (Array.isArray(data)) setProductos(data);
-          else if (data && data.object && Array.isArray(data.object))
-            setProductos(data.object);
-          else setProductos([]);
-        })
-        .catch((error) => {
-          if (error.name !== "AbortError") setProductos([]);
-        });
+      buscarPorNombreCategoria(query, categoria, genero, controller.signal)
+        .then(setProductos)
+        .catch((error) => { if (error.name !== "AbortError") setProductos([]); });
     }, 350);
-    return () => {
-      clearTimeout(timeout);
-      controller.abort();
-    };
+    return () => { clearTimeout(timeout); controller.abort(); };
   }, [busqueda, categoria, genero]);
 
   return (

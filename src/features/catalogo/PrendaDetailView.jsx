@@ -6,11 +6,21 @@ import img from "../../assets/images/img.gif";
 import { Typography, Collapse, List, Button, Breadcrumb  } from "@material-tailwind/react";
 import { Plus, Minus, Ruler, House, Store, BadgeCheck, Box     } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
- import FooterC from '../../components/footer/Footer';
- import Swal from 'sweetalert2';
-import axios from "axios";
-
+import FooterC from "../../components/footer/Footer";
+import Swal from "sweetalert2";
 import WhatsAppButton from "../../components/contact/WhatsAppButton";
+import {
+  getPrenda,
+  getUsuarioId,
+  getCarritoAbierto,
+  createCarrito,
+  agregarCarritoItem,
+  createCarritoItem,
+  restarUno,
+  getCantidadItems,
+} from "./api/catalogoApi";
+
+const BASE_URL = "https://mixmatch.zapto.org";
 
 
 
@@ -26,14 +36,7 @@ const PrendaDetailView = () => {
   const [openDesc, setOpenDesc] = useState(false);
   const [openCarac, setOpenCarac] = useState(false);
   const [openMedidas, setOpenMedidas] = useState(false);
-  const [selectedTalla, setSelectedTalla] = useState(null); // Estado para la talla seleccionada
-        const token = localStorage.getItem('accessToken'); // o sessionStorage.getItem('token')
-
-// const API_BASE = "http://localhost:8080/api/v1";
-const API_BASE = "https://mixmatch.zapto.org/api/v1";
-
-// const API_BASE_BASE = "http://localhost:8080";
-const API_BASE_BASE = "https://mixmatch.zapto.org";
+  const [selectedTalla, setSelectedTalla] = useState(null);
 
   
   const navigate = useNavigate();
@@ -62,18 +65,15 @@ const API_BASE_BASE = "https://mixmatch.zapto.org";
   useEffect(() => {
     const fetchPrenda = async () => {
       try {
-        const response = await fetch(`${API_BASE}/prenda/${id}`);
-        const data = await response.json();
-        setPrenda(data.object);
-        setImagen(`${API_BASE_BASE}/${data.object.imagen.principal}`); // Imagen inicial
-
+        const data = await getPrenda(id);
+        setPrenda(data);
+        setImagen(`${BASE_URL}/${data.imagen.principal}`);
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching prenda:', error);
+        console.error("Error fetching prenda:", error);
         setLoading(false);
       }
     };
-
     fetchPrenda();
   }, [id]);
 
@@ -91,131 +91,58 @@ const API_BASE_BASE = "https://mixmatch.zapto.org";
   
 const handleAddToCart = async () => {
   if (!isUserLoggedIn()) {
-    localStorage.setItem('redirectAfterLogin', window.location.pathname + window.location.search);
+    localStorage.setItem("redirectAfterLogin", window.location.pathname + window.location.search);
     Swal.fire({
-      icon: 'info',
-      title: 'Necesitas logearte',
-      text: 'Por favor, inicia sesión para agregar productos al carrito.',
+      icon: "info",
+      title: "Necesitas logearte",
+      text: "Por favor, inicia sesión para agregar productos al carrito.",
       showConfirmButton: false,
       timer: 2000,
     });
-    setTimeout(() => {
-      navigate('/login');
-    }, 1000);
+    setTimeout(() => { navigate("/login"); }, 1000);
     return;
   }
 
   try {
-    const token = localStorage.getItem("accessToken");
-    if (!token) throw new Error("No hay token de acceso");
+    const usuarioId = await getUsuarioId();
 
-    // 1. Obtener usuarioId
-    const userRes = await axios.get(`${API_BASE_BASE}/usuario-id`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const usuarioId = userRes.data;
-
-      let carritoId;
-      let tituloCarrito = "";
-    const abiertoRes = await axios.get(
-      `${API_BASE}/carrito/abierto/usuario/${usuarioId}`, { headers: { Authorization: `Bearer ${token}` } }
-    );
-   if (abiertoRes.data.object && abiertoRes.data.object.length > 0) {
-  carritoId = abiertoRes.data.object[0].id;
-  console.log("Carrito abierto encontrado:", carritoId);
-  tituloCarrito= "Producto agregado al carrito existente";
-} else {
-      // Si no hay, crear uno nuevo
-      const carritoRes = await axios.post(
-        `${API_BASE}/carrito`,
-        { usuarioId, estado: "ABIERTO" },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      carritoId = carritoRes.data.object.id;
-  tituloCarrito= "Producto agregado al carrito nuevo";
-
+    let carritoId;
+    const abiertoRes = await getCarritoAbierto(usuarioId);
+    if (abiertoRes.object && abiertoRes.object.length > 0) {
+      carritoId = abiertoRes.object[0].id;
+    } else {
+      const carritoNuevo = await createCarrito(usuarioId);
+      carritoId = carritoNuevo.id;
     }
-localStorage.setItem('carritoId', carritoId);
+    localStorage.setItem("carritoId", carritoId);
+
     try {
-        console.log("selectedTalla (debe ser id):", selectedTalla);
+      await agregarCarritoItem(carritoId, Number(id), selectedTalla);
+      Swal.fire({ icon: "success", title: "Cantidad incrementada para el item existente", showConfirmButton: false, timer: 1500 });
+    } catch {
+      const selectedTallaObj = prenda.tallas.find((t) => t.talla.id === selectedTalla);
+      const tallaNombre = selectedTallaObj ? selectedTallaObj.talla.nomTalla : "";
+      await createCarritoItem(carritoId, Number(id), tallaNombre, 1, Number(precioConDescuento));
+      await handleRestarUno(id, selectedTalla);
+      Swal.fire({ icon: "success", title: "Producto agregado al carrito", showConfirmButton: false, timer: 1500 });
+    }
 
-    // 1. Intentar incrementar cantidad si el item ya existe
-    await axios.post(
-      `${API_BASE}/carrito-item/agregar`,
-      null,
-      {
-        params: {
-          carritoId,
-          prendaId: Number(id),
-          tallaId: selectedTalla // Aquí debes enviar el ID de la talla, no el nombre
-        },
-        headers: { Authorization: `Bearer ${token}` }
-      }
-    );
-    Swal.fire({
-      icon: 'success',
-      title: 'Cantidad incrementada para el item existente',
-      showConfirmButton: false,
-      timer: 1500,
-    });
-
-
+    const cantidad = await getCantidadItems(carritoId);
+    localStorage.setItem("cartCount", String(cantidad || 0));
+    window.dispatchEvent(new Event("cart-updated"));
   } catch (error) {
-     // Si no existe el item, lo creamos
-        const selectedTallaObj = prenda.tallas.find(t => t.talla.id === selectedTalla);
-    const tallaNombre = selectedTallaObj ? selectedTallaObj.talla.nomTalla : "";
-    await axios.post(
-      `${API_BASE}/carrito-item`,
-      {
-        carritoId,
-        prendaId: Number(id),
-        talla: tallaNombre,
-        cantidad: 1,
-        precioUnitario: Number(precioConDescuento)
-      },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    handleRestarUno(id, selectedTalla);
-    Swal.fire({
-      icon: 'success',
-      title: 'Producto agregado al carrito',
-      showConfirmButton: false,
-      timer: 1500,
-    });
-  }
-  // ACTUALIZA EL CONTADOR DEL CARRITO AQUÍ
-    const cantidadRes = await axios.get(
-      `${API_BASE}/carrito/${carritoId}/cantidad-items`, { headers: { Authorization: `Bearer ${token}` } }
-    );
-    console.log("Cantidad de items en el carrito:", cantidadRes.data);
-    // Si tu backend responde { cantidad: 3 }, usa cantidadRes.data.cantidad
-   const cantidad = cantidadRes.data.object;
-localStorage.setItem('cartCount', String(cantidad || 0));
-window.dispatchEvent(new Event('cart-updated'));
-
-
-  } catch (error) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'No se pudo agregar el producto al carrito.',
-    });
+    Swal.fire({ icon: "error", title: "Error", text: "No se pudo agregar el producto al carrito." });
     console.error(error);
   }
 };
 
-const handleRestarUno = async (id, selectedTalla) => {
+const handleRestarUno = async (prendaId, tallaId) => {
   try {
-    const res = await fetch(
-      `${API_BASE}/restar-uno?prendaId=${id}&tallaId=${selectedTalla}`,
-      { method: "PUT", headers: { 'Authorization': token ? `Bearer ${token}` : '' } }
-    );
-    const data = await res.json();
-    if (!res.ok || !data.object) {
+    const data = await restarUno(prendaId, tallaId);
+    if (!data.object) {
       Swal.fire("Sin stock", data.mensaje || "No hay stock suficiente.", "warning");
-      return;
     }
-  } catch (e) {
+  } catch {
     Swal.fire("Error", "No se pudo actualizar el stock.", "error");
   }
 };
@@ -251,11 +178,11 @@ const handleRestarUno = async (id, selectedTalla) => {
                         <div
                             className="  cursor-pointer w-full h-auto"
                             onClick={() =>
-                                setImagen(`${API_BASE_BASE}/${prenda.imagen.principal}`)
+                                setImagen(`${BASE_URL}/${prenda.imagen.principal}`)
                             }
                             >
                             <img
-                                src={`${API_BASE_BASE}/${prenda.imagen.principal}`}
+                                src={`${BASE_URL}/${prenda.imagen.principal}`}
                                 className=' object-contain w-full h-auto'
                                 alt={prenda.nombre}
                             />
@@ -264,7 +191,7 @@ const handleRestarUno = async (id, selectedTalla) => {
                         {prenda.imagen.video && (
                         <div className="  cursor-pointer w-full h-auto"
                         onClick={() =>
-                            setImagen(`${API_BASE_BASE}/${prenda.imagen.video}`)
+                            setImagen(`${BASE_URL}/${prenda.imagen.video}`)
                         }>
                             <img src={img} alt="GIF de ejemplo" className=" object-contain w-full h-auto"
                             />
@@ -274,11 +201,11 @@ const handleRestarUno = async (id, selectedTalla) => {
                         <div
                             className="  cursor-pointer w-full h-auto"
                             onClick={() =>
-                                setImagen(`${API_BASE_BASE}/${prenda.imagen.hover}`)
+                                setImagen(`${BASE_URL}/${prenda.imagen.hover}`)
                             }
                         >
                             <img
-                                src={`${API_BASE_BASE}/${prenda.imagen.hover}`}
+                                src={`${BASE_URL}/${prenda.imagen.hover}`}
                                 className=' object-contain w-full h-auto'
                                 alt={`${prenda.nombre} hover`}
                             />
@@ -287,11 +214,11 @@ const handleRestarUno = async (id, selectedTalla) => {
                         <div
                             className="  cursor-pointer w-full h-auto"
                             onClick={() =>
-                            setImagen(`${API_BASE_BASE}/${prenda.imagen.img1}`)
+                            setImagen(`${BASE_URL}/${prenda.imagen.img1}`)
                             }
                         >
                             <img
-                            src={`${API_BASE_BASE}/${prenda.imagen.img1}`}
+                            src={`${BASE_URL}/${prenda.imagen.img1}`}
                                         className=' object-contain w-full h-auto'
                             alt={`${prenda.nombre} secundaria`}
                             />
@@ -300,11 +227,11 @@ const handleRestarUno = async (id, selectedTalla) => {
                         <div
                             className="  cursor-pointer w-full h-auto"
                             onClick={() =>
-                            setImagen(`${API_BASE_BASE}/${prenda.imagen.img2}`)
+                            setImagen(`${BASE_URL}/${prenda.imagen.img2}`)
                             }
                         >
                             <img
-                            src={`${API_BASE_BASE}/${prenda.imagen.img2}`}
+                            src={`${BASE_URL}/${prenda.imagen.img2}`}
                                         className=' object-contain w-full h-auto'
                             alt={`${prenda.nombre} secundaria`}
                             />
