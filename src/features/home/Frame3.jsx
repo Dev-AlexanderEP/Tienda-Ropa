@@ -2,11 +2,19 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import Swal from "sweetalert2";
+import {
+  getPrendasNovedadesHombre,
+  getUsuarioId,
+  getCarritoAbierto,
+  createCarrito,
+  agregarCarritoItem,
+  createCarritoItem,
+  restarUno,
+  getCantidadItems,
+} from "./api/homeApi";
 
-const API_BASE = "https://mixmatch.zapto.org/api/v1";
-const API_BASE_BASE = "https://mixmatch.zapto.org";
+const BASE_URL = "https://mixmatch.zapto.org";
 
 export default function Frame3() {
   const [hovered, setHovered] = useState(null);
@@ -33,28 +41,10 @@ export default function Frame3() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Cargar productos desde la API (Novedades - Hombre)
   useEffect(() => {
-    const fetchNovedades = async () => {
-      try {
-        // Usamos la API de prendas filtradas para "hombre"
-        const res = await fetch(`${API_BASE}/prendas/descuentos-aplicados-por-genero/hombre`);
-        const data = await res.json();
-        if (data.object && Array.isArray(data.object)) {
-          // Limitamos a 12 productos para el carrusel
-          setProductos(data.object.slice(0, 12));
-        } else {
-          setProductos([]);
-        }
-        setLoading(false);
-      } catch (error) {
-        console.error("Error al cargar novedades:", error);
-        setProductos([]);
-        setLoading(false);
-      }
-    };
-
-    fetchNovedades();
+    getPrendasNovedadesHombre()
+      .then((data) => { setProductos(data.slice(0, 12)); setLoading(false); })
+      .catch(() => { setProductos([]); setLoading(false); });
   }, []);
 
   const tallasVariants = {
@@ -153,109 +143,44 @@ export default function Frame3() {
     }
 
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) throw new Error("No hay token de acceso");
-
-      // 1. Obtener usuarioId
-      const userRes = await axios.get(`${API_BASE_BASE}/usuario-id`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const usuarioId = userRes.data;
+      const usuarioId = await getUsuarioId();
 
       let carritoId;
-      const abiertoRes = await axios.get(`${API_BASE}/carrito/abierto/usuario/${usuarioId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (abiertoRes.data.object && abiertoRes.data.object.length > 0) {
-        carritoId = abiertoRes.data.object[0].id;
-        console.log("Carrito abierto encontrado:", carritoId);
+      const abiertoRes = await getCarritoAbierto(usuarioId);
+      if (abiertoRes.object && abiertoRes.object.length > 0) {
+        carritoId = abiertoRes.object[0].id;
       } else {
-        // Si no hay, crear uno nuevo
-        const carritoRes = await axios.post(
-          `${API_BASE}/carrito`,
-          { usuarioId, estado: "ABIERTO" },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        carritoId = carritoRes.data.object.id;
+        const carritoNuevo = await createCarrito(usuarioId);
+        carritoId = carritoNuevo.id;
       }
       localStorage.setItem("carritoId", carritoId);
 
       try {
-        console.log("selectedTalla (debe ser id):", selectedTalla);
-
-        // 1. Intentar incrementar cantidad si el item ya existe
-        await axios.post(`${API_BASE}/carrito-item/agregar`, null, {
-          params: {
-            carritoId,
-            prendaId: Number(producto.id),
-            tallaId: selectedTalla,
-          },
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        Swal.fire({
-          icon: "success",
-          title: "Cantidad incrementada",
-          showConfirmButton: false,
-          timer: 1500,
-        });
+        await agregarCarritoItem(carritoId, Number(producto.id), selectedTalla);
+        Swal.fire({ icon: "success", title: "Cantidad incrementada", showConfirmButton: false, timer: 1500 });
       } catch {
-        // Si no existe el item, lo creamos
         const precioConDescuento = (producto.precio * (1 - producto.descuentoAplicado / 100)).toFixed(2);
-
-        // Buscar el nombre de la talla
         const tallaObj = producto.tallas?.find((t) => t.talla.id === selectedTalla);
         const tallaNombre = tallaObj ? tallaObj.talla.nomTalla : "";
-
-        await axios.post(
-          `${API_BASE}/carrito-item`,
-          {
-            carritoId,
-            prendaId: Number(producto.id),
-            talla: tallaNombre,
-            cantidad: 1,
-            precioUnitario: Number(precioConDescuento),
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        handleRestarUno(producto.id, selectedTalla);
-        Swal.fire({
-          icon: "success",
-          title: "Producto agregado al carrito",
-          showConfirmButton: false,
-          timer: 1500,
-        });
+        await createCarritoItem(carritoId, Number(producto.id), tallaNombre, 1, Number(precioConDescuento));
+        await handleRestarUno(producto.id, selectedTalla);
+        Swal.fire({ icon: "success", title: "Producto agregado al carrito", showConfirmButton: false, timer: 1500 });
       }
 
-      // ACTUALIZA EL CONTADOR DEL CARRITO AQUÍ
-      const cantidadRes = await axios.get(`${API_BASE}/carrito/${carritoId}/cantidad-items`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      console.log("Cantidad de items en el carrito:", cantidadRes.data);
-      const cantidad = cantidadRes.data.object;
+      const cantidad = await getCantidadItems(carritoId);
       localStorage.setItem("cartCount", String(cantidad || 0));
       window.dispatchEvent(new Event("cart-updated"));
     } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "No se pudo agregar el producto al carrito.",
-      });
+      Swal.fire({ icon: "error", title: "Error", text: "No se pudo agregar el producto al carrito." });
       console.error(error);
     }
   };
 
   const handleRestarUno = async (prendaId, tallaId) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      const res = await fetch(`${API_BASE}/restar-uno?prendaId=${prendaId}&tallaId=${tallaId}`, {
-        method: "PUT",
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
-      });
-      const data = await res.json();
-      if (!res.ok || !data.object) {
+      const data = await restarUno(prendaId, tallaId);
+      if (!data.object) {
         Swal.fire("Sin stock", data.mensaje || "No hay stock suficiente.", "warning");
-        return;
       }
     } catch {
       Swal.fire("Error", "No se pudo actualizar el stock.", "error");
@@ -377,12 +302,12 @@ export default function Frame3() {
                       className="relative group w-full h-[350px] md:h-full overflow-hidden rounded-lg"
                     >
                       <img
-                        src={`${API_BASE_BASE}/${product.imagenPrincipal}`}
+                        src={`${BASE_URL}/${product.imagenPrincipal}`}
                         alt={product.nombre}
                         className="w-full h-full  object-cover transition-opacity duration-300 absolute top-0 left-0 z-10 group-hover:opacity-0"
                       />
                       <img
-                        src={`${API_BASE_BASE}/${product.imagenHover}`}
+                        src={`${BASE_URL}/${product.imagenHover}`}
                         alt={product.nombre + " hover"}
                         className="w-full h-full object-cover transition-opacity duration-300 absolute top-0 left-0 z-20 opacity-0 group-hover:opacity-100"
                       />
