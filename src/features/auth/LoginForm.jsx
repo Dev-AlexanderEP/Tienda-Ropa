@@ -4,84 +4,61 @@ import { Typography, Input, Button, Card } from "@material-tailwind/react";
 import imagen1 from "../../assets/images/login/imagen1.webp";
 import imagen2 from "../../assets/images/login/imagen2.webp";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { login, loginWithGoogle } from "./api/authApi";
+import { LoginSchema } from "./dto/login.schema";
 
 const clientId = "609851888135-3dgcnr9mv7ifr7898p1trde1ga96ujoe.apps.googleusercontent.com";
 
-const API_BASE_BASE = "https://mixmatch.zapto.org";
-
 export default function LoginForm() {
-  const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState(null);
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    try {
-      const res = await axios.post(
-        `${API_BASE_BASE}/token`,
-        new URLSearchParams({
-          username,
-          password,
-          grantType: "password",
-          withRefreshToken: true,
-        }),
-        { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
-      );
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({ resolver: zodResolver(LoginSchema) });
 
-      const { accessToken, refreshToken } = res.data;
+  const redirectAfterLogin = () => {
+    const redirectPath = localStorage.getItem("redirectAfterLogin");
+    if (redirectPath) {
+      localStorage.removeItem("redirectAfterLogin");
+      navigate(redirectPath);
+    } else {
+      navigate("/");
+    }
+  };
+
+  const onSubmit = async ({ username, password }) => {
+    setServerError(null);
+    try {
+      const { accessToken, refreshToken } = await login(username, password);
       localStorage.setItem("accessToken", accessToken);
       localStorage.setItem("refreshToken", refreshToken);
-
-      const redirectPath = localStorage.getItem("redirectAfterLogin");
-      if (redirectPath) {
-        localStorage.removeItem("redirectAfterLogin");
-        navigate(redirectPath);
-      } else {
-        navigate("/");
-      }
+      redirectAfterLogin();
     } catch (err) {
-      setError("Credenciales incorrectas");
+      setServerError("Credenciales incorrectas");
       console.error("Error en el login:", err.response ? err.response.data : err.message);
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleGoogleSuccess = async (response) => {
-    setLoading(true);
-    setError(null);
+    setServerError(null);
     try {
-      const res = await axios.post(`${API_BASE_BASE}/google-login`, {
-        credential: response.credential,
-        clientId,
-      });
-
-      const { accessToken, refreshToken } = res.data;
+      const { accessToken, refreshToken } = await loginWithGoogle(response.credential, clientId);
       localStorage.setItem("accessToken", accessToken);
       localStorage.setItem("refreshToken", refreshToken);
-
-      const redirectPath = localStorage.getItem("redirectAfterLogin");
-      if (redirectPath) {
-        localStorage.removeItem("redirectAfterLogin");
-        navigate(redirectPath);
-      } else {
-        navigate("/");
-      }
+      redirectAfterLogin();
     } catch (error) {
-      setError(error.response?.data?.error || "Error al autenticar con el backend");
-    } finally {
-      setLoading(false);
+      setServerError(error.response?.data?.error || "Error al autenticar con el backend");
     }
   };
 
   const handleGoogleError = () => {
-    setError("Error en la autenticación de Google");
+    setServerError("Error en la autenticación de Google");
   };
 
   return (
@@ -104,40 +81,38 @@ export default function LoginForm() {
                 <Typography color="blue-gray" className="mb-6 text-center text-3xl font-sans">
                   Iniciar Sesión
                 </Typography>
-                <form onSubmit={handleLogin} className="flex flex-col gap-4">
+                <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
                   <label htmlFor="username" className="text-xl font-medium">
                     Usuario o Correo electrónico
                   </label>
                   <Input
                     id="username"
                     label="Usuario"
-                    name="username"
                     type="text"
-                    value={username}
+                    {...register("username")}
                     className="border hover:border-red-600 hover:shadow-sm hover:outline-red-200 h-[50px] focus:outline-red-200 focus:border-red-500 text-[17px]"
-                    onChange={e => setUsername(e.target.value)}
-                    required
                   />
+                  {errors.username && <p className="text-red-500 text-sm">{errors.username.message}</p>}
+
                   <label htmlFor="password" className="text-xl font-medium">
                     Contraseña
                   </label>
                   <Input
                     id="password"
                     label="Contraseña"
-                    name="password"
                     type="password"
-                    value={password}
+                    {...register("password")}
                     className="border hover:border-red-600 hover:shadow-sm hover:outline-red-200 h-[50px] focus:outline-red-200 focus:border-red-500 text-[17px]"
-                    onChange={e => setPassword(e.target.value)}
-                    required
                   />
+                  {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
+
                   <Button
                     type="submit"
                     variant="outline"
                     className="mt-4 hover:bg-red-200 border border-red-300 hover:text-black text-md"
-                    disabled={loading}
+                    disabled={isSubmitting}
                   >
-                    {loading ? "Cargando..." : "Ingresar"}
+                    {isSubmitting ? "Cargando..." : "Ingresar"}
                   </Button>
                 </form>
                 <div className="my-4">
@@ -157,7 +132,7 @@ export default function LoginForm() {
                 </div>
               </div>
             </Card>
-            {error && <p className="text-red-500 text-center">{error}</p>}
+            {serverError && <p className="text-red-500 text-center">{serverError}</p>}
           </div>
         </div>
       </div>

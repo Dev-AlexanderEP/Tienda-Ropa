@@ -3,50 +3,26 @@ import Navbar from "../../components/navbaar/NavBar";
 import { Typography, Input, Button, Card } from "@material-tailwind/react";
 import imagen1 from "../../assets/images/login/imagen1.webp";
 import imagen2 from "../../assets/images/login/imagen2.webp";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
-const API_BASE = "https://mixmatch.zapto.org/api/v1";
-const API_BASE_BASE = "https://mixmatch.zapto.org";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { register } from "./api/authApi";
+import { RegisterSchema } from "./dto/register.schema";
 
 export default function RegisterForm() {
-  const [nombreUsuario, setNombreUsuario] = useState("");
-  const [email, setEmail] = useState("");
-  const [contrasenia, setContrasenia] = useState("");
-  const [confirmarContrasenia, setConfirmarContrasenia] = useState("");
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState(null);
   const navigate = useNavigate();
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setError(null);
+  const {
+    register: registerField,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({ resolver: zodResolver(RegisterSchema) });
 
-    if (contrasenia !== confirmarContrasenia) {
-      setError("Las contraseñas no coinciden");
-      return;
-    }
-
-    setLoading(true);
+  const onSubmit = async ({ nombreUsuario, email, contrasenia }) => {
+    setServerError(null);
     try {
-      const loginRes = await axios.post(
-        `${API_BASE_BASE}/token`,
-        new URLSearchParams({
-          username: "admin@example.com",
-          password: "123456",
-          grantType: "password",
-          withRefreshToken: true,
-        }),
-        { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
-      );
-
-      const { accessToken } = loginRes.data;
-
-      await axios.post(
-        `${API_BASE}/usuarios/create`,
-        { nombreUsuario, email, contrasenia },
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
+      await register({ nombreUsuario, email, contrasenia });
 
       const redirectPath = localStorage.getItem("redirectAfterLogin");
       if (redirectPath) {
@@ -57,15 +33,13 @@ export default function RegisterForm() {
       }
     } catch (err) {
       if (err.response?.status === 409) {
-        setError("El usuario o email ya existe. Intenta con otros datos.");
+        setServerError("El usuario o email ya existe. Intenta con otros datos.");
       } else if (err.response?.data?.error) {
-        setError(err.response.data.error);
+        setServerError(err.response.data.error);
       } else {
-        setError("Error al registrar. Intenta con otro usuario o correo.");
+        setServerError("Error al registrar. Intenta con otro usuario o correo.");
       }
       console.error("Error en el registro:", err.response ? err.response.data : err.message);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -89,66 +63,62 @@ export default function RegisterForm() {
                 <Typography color="blue-gray" className="mb-6 text-center text-2xl font-sans">
                   Registro
                 </Typography>
-                <form onSubmit={handleRegister} className="flex flex-col gap-2">
+                <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-2">
                   <label htmlFor="nombreUsuario" className="text-md font-medium">
                     Nombre de usuario
                   </label>
                   <Input
                     id="nombreUsuario"
                     label="Nombre de usuario"
-                    name="nombreUsuario"
                     type="text"
-                    value={nombreUsuario}
+                    {...registerField("nombreUsuario")}
                     className="border hover:border-red-600 h-[40px] text-[16px]"
-                    onChange={e => setNombreUsuario(e.target.value)}
-                    required
                   />
+                  {errors.nombreUsuario && <p className="text-red-500 text-sm">{errors.nombreUsuario.message}</p>}
+
                   <label htmlFor="email" className="text-md font-medium">
                     Email
                   </label>
                   <Input
                     id="email"
                     label="Email"
-                    name="email"
                     type="email"
-                    value={email}
+                    {...registerField("email")}
                     className="border hover:border-red-600 h-[40px] text-[16px]"
-                    onChange={e => setEmail(e.target.value)}
-                    required
                   />
+                  {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
+
                   <label htmlFor="contrasenia" className="text-md font-medium">
                     Contraseña
                   </label>
                   <Input
                     id="contrasenia"
                     label="Contraseña"
-                    name="contrasenia"
                     type="password"
-                    value={contrasenia}
+                    {...registerField("contrasenia")}
                     className="border hover:border-red-600 h-[40px] text-[16px]"
-                    onChange={e => setContrasenia(e.target.value)}
-                    required
                   />
+                  {errors.contrasenia && <p className="text-red-500 text-sm">{errors.contrasenia.message}</p>}
+
                   <label htmlFor="confirmarContrasenia" className="text-md font-medium">
                     Confirmar contraseña
                   </label>
                   <Input
                     id="confirmarContrasenia"
                     label="Confirmar contraseña"
-                    name="confirmarContrasenia"
                     type="password"
-                    value={confirmarContrasenia}
+                    {...registerField("confirmarContrasenia")}
                     className="border hover:border-red-600 h-[40px] text-[16px]"
-                    onChange={e => setConfirmarContrasenia(e.target.value)}
-                    required
                   />
+                  {errors.confirmarContrasenia && <p className="text-red-500 text-sm">{errors.confirmarContrasenia.message}</p>}
+
                   <Button
                     type="submit"
                     variant="outline"
                     className="hover:bg-red-200 border border-red-300 hover:text-black text-md"
-                    disabled={loading}
+                    disabled={isSubmitting}
                   >
-                    {loading ? "Registrando..." : "Registrarse"}
+                    {isSubmitting ? "Registrando..." : "Registrarse"}
                   </Button>
                 </form>
                 <div className="flex gap-x-2 mt-4">
@@ -157,7 +127,7 @@ export default function RegisterForm() {
                     Inicia Sesión
                   </a>
                 </div>
-                {error && <p className="text-red-500 text-center mt-2">{error}</p>}
+                {serverError && <p className="text-red-500 text-center mt-2">{serverError}</p>}
               </div>
             </Card>
           </div>
