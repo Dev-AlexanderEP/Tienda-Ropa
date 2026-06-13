@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { getCarrito } from "./api/carritoApi";
 
-const API_BASE_BASE = "https://mixmatch.zapto.org";
+import { API_BASE_BASE } from "../../config/api";
 
 const ResumenCompra = ({ carritoId, descuento, onNextStep }) => {
   const [carrito, setCarrito] = useState(null);

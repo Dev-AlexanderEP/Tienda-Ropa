@@ -1,4 +1,5 @@
 import * as React from "react";
+import { API_BASE_BASE as BASE_URL } from "../../config/api";
 import {
   Collapse,
   List,
@@ -704,12 +705,12 @@ const FilterView = () => {
                     href={`/${genero}/${categoria}/${producto.id}/${producto.descuentoAplicado}`}
                   >
                     <img
-                      src={"https://mixmatch.zapto.org/" + producto.imagenPrincipal}
+                      src={`${BASE_URL}/` + producto.imagenPrincipal}
                       alt={producto.nombre}
                       className="w-full object-center  transition-opacity duration-300 absolute top-0 left-0 z-10 group-hover:opacity-0"
                     />
                     <img
-                      src={"https://mixmatch.zapto.org/" + producto.imagenHover}
+                      src={`${BASE_URL}/` + producto.imagenHover}
                       alt={producto.nombre + " hover"}
                       className="w-full object-contain  transition-opacity duration-300 obsolute  top-0 left-0 z-20 opacity-0 group-hover:opacity-100"
                     />

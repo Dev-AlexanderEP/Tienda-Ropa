@@ -1,12 +1,8 @@
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import Swal from "sweetalert2";
-import {
-  actualizarVentaPagada,
-  actualizarCarrito,
-  registrarDatosPersonalesYEnvio,
-  guardarDireccion,
-  enviarCorreo,
-} from "./api/pagosApi";
+import { actualizarVentaPagada } from "../carrito/api/ventaApi";
+import { actualizarCarrito } from "../carrito/api/carritoApi";
+import { registrarDatosPersonalesYEnvio, guardarDireccion, enviarCorreo } from "../envio/api/envioApi";
 
 const TIPO_CAMBIO = 3.7;
 const PAYPAL_CLIENT_ID = "ATaavYymwB377Sr8RLMX2SFGLA71tjUY8ULuQAc_bab4luBD7uq4DSdcVXvy5kY3HGvMoaRS30jzyvwt";

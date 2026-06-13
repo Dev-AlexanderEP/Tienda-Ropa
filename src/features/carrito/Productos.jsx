@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
+import { API_BASE_BASE as BASE_URL } from "../../config/api";
 import PropTypes from "prop-types";
 import { IconButton, Typography, Input, Button } from "@material-tailwind/react";
 import { Plus, Minus, Trash2 } from "lucide-react";
 import Swal from "sweetalert2";
+import { getUsuarioId } from "../auth/api/userApi";
 import {
   getCarrito,
-  getUsuarioId,
   updateItemCantidad,
   sumarUno,
   restarUno,
@@ -158,7 +159,7 @@ const Productos = ({ carritoId, onNextStep, descuento, setDescuento, total, setT
                 <td className="py-4 border-b border-slate-600">
                   <div className="flex items-center flex-col gap-4">
                     <img
-                      src={`https://mixmatch.zapto.org/${item.prenda.imagen.principal}`}
+                      src={`${BASE_URL}/${item.prenda.imagen.principal}`}
                       alt={item.prenda.nombre}
                       className="w-16 h-20 object-cover rounded max-sm:hidden"
                     />

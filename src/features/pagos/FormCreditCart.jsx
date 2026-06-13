@@ -3,14 +3,10 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Swal from "sweetalert2";
 import { CreditCardSchema } from "./dto/creditCard.schema";
-import {
-  createPago,
-  actualizarVentaPagada,
-  actualizarCarrito,
-  registrarDatosPersonalesYEnvio,
-  guardarDireccion,
-  enviarCorreo,
-} from "./api/pagosApi";
+import { actualizarVentaPagada } from "../carrito/api/ventaApi";
+import { actualizarCarrito } from "../carrito/api/carritoApi";
+import { createPago } from "./api/pagosApi";
+import { registrarDatosPersonalesYEnvio, guardarDireccion, enviarCorreo } from "../envio/api/envioApi";
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 12 }, (_, i) => currentYear + i);

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { API_BASE_BASE as BASE_URL } from "../../config/api";
 import { Collapse, List, Checkbox, Card, Typography, Select  } from "@material-tailwind/react";
 import { useParams } from "react-router-dom";
 import {  ChevronDown  } from 'lucide-react';
@@ -17,8 +18,6 @@ import {
   getDescuentosPorGenero,
   buscarPorNombreGenero,
 } from "./api/catalogoApi";
-
-const BASE_URL = "https://mixmatch.zapto.org";
 
 const AllPrendasView = () => {
 

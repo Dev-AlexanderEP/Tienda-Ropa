@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { API_BASE_BASE as BASE_URL } from "../../config/api";
 import NavBarResponsive from "../../components/navbaar/NavBarResponsive";
 import { getEnvioTracking } from "./api/envioApi";
 import imgtruck from "../../assets/images/imgtruck.png";
@@ -227,7 +228,7 @@ export default function EnvioTrackingView() {
                       <tr key={item.id} className="border-t border-black/10">
                         <td className="py-2 px-3 max-md:hidden">
                           <img
-                            src={`https://mixmatch.zapto.org/${item.prenda.imagen.principal}`}
+                            src={`${BASE_URL}/${item.prenda.imagen.principal}`}
                             alt={item.prenda.nombre}
                             className="w-16 h-16 object-cover rounded"
                           />

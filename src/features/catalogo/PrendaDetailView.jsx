@@ -9,18 +9,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import FooterC from "../../components/footer/Footer";
 import Swal from "sweetalert2";
 import WhatsAppButton from "../../components/contact/WhatsAppButton";
+import { getUsuarioId } from "../auth/api/userApi";
+import { getPrenda } from "./api/catalogoApi";
 import {
-  getPrenda,
-  getUsuarioId,
   getCarritoAbierto,
   createCarrito,
   agregarCarritoItem,
   createCarritoItem,
   restarUno,
   getCantidadItems,
-} from "./api/catalogoApi";
+} from "../carrito/api/carritoApi";
 
-const BASE_URL = "https://mixmatch.zapto.org";
+import { API_BASE_BASE as BASE_URL } from "../../config/api";
 
 
 

@@ -4,13 +4,9 @@ import { Input, Typography, Button, Checkbox } from "@material-tailwind/react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { DatosPersonalesSchema } from "./dto/datosPersonales.schema";
-import {
-  getUsuarioId,
-  createVenta,
-  getSegundaPendiente,
-  deleteVenta,
-  createCarritoDetalle,
-} from "./api/carritoApi";
+import { getUsuarioId } from "../auth/api/userApi";
+import { createVenta, getSegundaPendiente, deleteVenta } from "./api/ventaApi";
+import { createCarritoDetalle } from "./api/carritoApi";
 
 const DatosPersonales = ({ datos, setDatos, onContinuar, carritoId, setVentaId }) => {
   const [serverError, setServerError] = useState(null);

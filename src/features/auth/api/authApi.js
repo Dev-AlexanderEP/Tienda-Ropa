@@ -1,7 +1,5 @@
 import axios from "axios";
-
-const API_BASE = "https://mixmatch.zapto.org/api/v1";
-const API_BASE_BASE = "https://mixmatch.zapto.org";
+import { API_BASE, API_BASE_BASE } from "../../../config/api";
 
 /**
  * @param {string} username

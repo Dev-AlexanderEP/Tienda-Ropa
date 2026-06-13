@@ -3,18 +3,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import { getUsuarioId } from "../auth/api/userApi";
+import { getPrendasPorGenero } from "../catalogo/api/catalogoApi";
 import {
-  getPrendasNovedadesHombre,
-  getUsuarioId,
   getCarritoAbierto,
   createCarrito,
   agregarCarritoItem,
   createCarritoItem,
   restarUno,
   getCantidadItems,
-} from "./api/homeApi";
+} from "../carrito/api/carritoApi";
 
-const BASE_URL = "https://mixmatch.zapto.org";
+import { API_BASE_BASE as BASE_URL } from "../../config/api";
 
 export default function Frame3() {
   const [hovered, setHovered] = useState(null);
@@ -42,7 +42,7 @@ export default function Frame3() {
   }, []);
 
   useEffect(() => {
-    getPrendasNovedadesHombre()
+    getPrendasPorGenero("hombre")
       .then((data) => { setProductos(data.slice(0, 12)); setLoading(false); })
       .catch(() => { setProductos([]); setLoading(false); });
   }, []);
