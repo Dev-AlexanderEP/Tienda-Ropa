@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-import Navbar from "../../components/navbaar/NavBar";
 import NavBarResponsive from "../../components/navbaar/NavBarResponsive";
+import { getEnvioTracking } from "./api/envioApi";
 import imgtruck from "../../assets/images/imgtruck.png";
 import FooterC from "../../components/footer/Footer";
 import {
@@ -38,9 +37,6 @@ export default function EnvioTrackingView() {
   const [data, setData] = useState(null);
   const [step, setStep] = useState(0);
   const [error, setError] = useState("");
-        const token = localStorage.getItem('accessToken'); // o sessionStorage.getItem('token')
- // const API_BASE = "http://localhost:8080/api/v1";
-const API_BASE = "https://mixmatch.zapto.org/api/v1";
   // Si la ruta es con tracking en url, busca automáticamente
   useEffect(() => {
     if (trackingFromUrl) {
@@ -53,20 +49,11 @@ const API_BASE = "https://mixmatch.zapto.org/api/v1";
     setError("");
     setData(null);
     try {
-      const res = await axios.get(
-        `${API_BASE}/envio/tracking/${codigo.trim()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      setData(res.data);
-      setStep(STEP_MAP[res.data.estado] ?? 0);
+      const res = await getEnvioTracking(codigo);
+      setData(res);
+      setStep(STEP_MAP[res.estado] ?? 0);
     } catch (err) {
-      setError(
-        err.response?.data || "No se encontró el envío con ese tracking."
-      );
+      setError(err.response?.data || "No se encontró el envío con ese tracking.");
       setStep(0);
     }
   };
@@ -240,7 +227,7 @@ const API_BASE = "https://mixmatch.zapto.org/api/v1";
                       <tr key={item.id} className="border-t border-black/10">
                         <td className="py-2 px-3 max-md:hidden">
                           <img
-                            src={`http://localhost:8080/${item.prenda.imagen.principal}`}
+                            src={`https://mixmatch.zapto.org/${item.prenda.imagen.principal}`}
                             alt={item.prenda.nombre}
                             className="w-16 h-16 object-cover rounded"
                           />
