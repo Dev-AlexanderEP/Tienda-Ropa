@@ -1,57 +1,117 @@
 import axios from "axios";
-import { getUsuarioId } from "../../auth/api/userApi";
-import { API_BASE } from "../../../config/api";
+import { API_BASE_BASE } from "../../../config/api";
+import {
+  AgregarCarritoItemParamsSchema,
+  AplicarCuponSchema,
+  CarritoItemResponseSchema,
+  CarritoResponseSchema,
+  CreateCarritoItemBodySchema,
+  EstadoCarritoSchema,
+  StockParamsSchema,
+  SumarStockParamsSchema,
+  UpdateItemCantidadSchema,
+} from "../dto/carrito.schema";
+
+const CARRITOS_BASE = `${API_BASE_BASE}/api/carritos`;
+const CARRITO_ITEMS_BASE = `${API_BASE_BASE}/api/carrito-items`;
+const PRENDA_TALLAS_BASE = `${API_BASE_BASE}/api/prenda-tallas`;
+const DESCUENTO_BASE = `${API_BASE_BASE}/api`;
 
 const authHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
 });
 
+// ─── Carrito ─────────────────────────────────────────────────────────────────
+
 export const getCarritoAbierto = (usuarioId) =>
-  axios.get(`${API_BASE}/carrito/abierto/usuario/${usuarioId}`, { headers: authHeaders() }).then((r) => r.data);
-
-export const createCarrito = (usuarioId) =>
-  axios.post(`${API_BASE}/carrito`, { usuarioId, estado: "ABIERTO" }, { headers: authHeaders() }).then((r) => r.data.object);
-
-export const agregarCarritoItem = (carritoId, prendaId, tallaId) =>
-  axios.post(`${API_BASE}/carrito-item/agregar`, null, {
-    params: { carritoId, prendaId, tallaId },
-    headers: authHeaders(),
-  });
-
-export const createCarritoItem = (carritoId, prendaId, talla, cantidad, precioUnitario) =>
-  axios.post(`${API_BASE}/carrito-item`, { carritoId, prendaId, talla, cantidad, precioUnitario }, { headers: authHeaders() });
-
-export const getCantidadItems = (carritoId) =>
-  axios.get(`${API_BASE}/carrito/${carritoId}/cantidad-items`, { headers: authHeaders() }).then((r) => r.data.object);
+  axios
+    .get(`${CARRITOS_BASE}/abierto/usuario/${usuarioId}`, { headers: authHeaders() })
+    .then((r) => CarritoResponseSchema.array().parse(r.data.data ?? []));
 
 export const getCarrito = (carritoId) =>
-  axios.get(`${API_BASE}/carrito/${carritoId}`, { headers: authHeaders() }).then(r => r.data.object);
+  axios
+    .get(`${CARRITOS_BASE}/${carritoId}`, { headers: authHeaders() })
+    .then((r) => CarritoResponseSchema.parse(r.data.data));
 
-export const updateItemCantidad = (itemId, cantidad) =>
-  axios.put(`${API_BASE}/carrito-item/${itemId}/cantidad?cantidad=${cantidad}`, null, { headers: authHeaders() });
+export const getCantidadItems = (carritoId) =>
+  axios
+    .get(`${CARRITOS_BASE}/${carritoId}/cantidad-items`, { headers: authHeaders() })
+    .then((r) => r.data.data);
 
-export const sumarUno = (prendaId, tallaId) =>
-  axios.put(`${API_BASE}/sumar-uno?prendaId=${prendaId}&tallaId=${tallaId}`, null, { headers: authHeaders() }).then(r => r.data);
+// usuarioId viene del JWT — no se envía body
+export const createCarrito = () =>
+  axios
+    .post(CARRITOS_BASE, null, { headers: authHeaders() })
+    .then((r) => CarritoResponseSchema.parse(r.data.data));
 
-export const restarUno = (prendaId, tallaId) =>
-  axios.put(`${API_BASE}/restar-uno?prendaId=${prendaId}&tallaId=${tallaId}`, null, { headers: authHeaders() }).then(r => r.data);
+// body es el string del estado directamente, no un objeto
+export const updateCarrito = (carritoId, estado = "COMPLETADO") => {
+  const estadoValido = EstadoCarritoSchema.parse(estado);
+  return axios.put(`${CARRITOS_BASE}/${carritoId}`, JSON.stringify(estadoValido), {
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+  });
+};
 
-export const sumarStock = (prendaId, tallaId, cantidad) =>
-  axios.put(`${API_BASE}/sumar?prendaId=${prendaId}&tallaId=${tallaId}&cantidad=${cantidad}`, null, { headers: authHeaders() });
+export const deleteCarrito = (carritoId) =>
+  axios.delete(`${CARRITOS_BASE}/${carritoId}`, { headers: authHeaders() });
+
+export const actualizarCarrito = (carritoId) => updateCarrito(carritoId, "COMPLETADO");
+
+// ─── CarritoItem ──────────────────────────────────────────────────────────────
+
+// Agrega o incrementa por prendaId + tallaId — resuelve prendaTallaId internamente
+export const agregarCarritoItem = (carritoId, prendaId, tallaId) => {
+  const params = AgregarCarritoItemParamsSchema.parse({ carritoId, prendaId, tallaId });
+  return axios.post(`${CARRITO_ITEMS_BASE}/agregar`, null, { params, headers: authHeaders() });
+};
+
+// Usar solo cuando ya se conoce el prendaTallaId — preferir agregarCarritoItem
+export const createCarritoItem = async (carritoId, prendaTallaId, cantidad, precioUnitario) => {
+  const body = CreateCarritoItemBodySchema.parse({ carritoId, prendaTallaId, cantidad, precioUnitario });
+  const r = await axios.post(CARRITO_ITEMS_BASE, body, { headers: authHeaders() });
+  return CarritoItemResponseSchema.parse(r.data.data);
+};
+
+export const updateItemCantidad = (itemId, cantidad) => {
+  const { itemId: id, cantidad: qty } = UpdateItemCantidadSchema.parse({ itemId, cantidad });
+  return axios.put(`${CARRITO_ITEMS_BASE}/${id}/cantidad`, null, {
+    params: { cantidad: qty },
+    headers: authHeaders(),
+  });
+};
 
 export const deleteCarritoItem = (itemId) =>
-  axios.delete(`${API_BASE}/carrito-item/${itemId}`, { headers: authHeaders() });
+  axios.delete(`${CARRITO_ITEMS_BASE}/${itemId}`, { headers: authHeaders() });
 
-export const aplicarCupon = (usuarioId, codigo) =>
-  axios.post(`${API_BASE}/aplicar`, { usuarioId: Number(usuarioId), codigo }, { headers: authHeaders() }).then(r => r.data);
+// ─── Stock (solo ADMIN) ───────────────────────────────────────────────────────
 
-export const createCarritoDetalle = (ventaId, carritoId) =>
-  axios.post(`${API_BASE}/carritodetalle`, { ventaId, carritoId }, { headers: authHeaders() });
+export const sumarUno = async (prendaId, tallaId) => {
+  const params = StockParamsSchema.parse({ prendaId, tallaId });
+  const r = await axios.put(`${PRENDA_TALLAS_BASE}/stock/incremento`, null, { params, headers: authHeaders() });
+  return r.data.data;
+};
 
-export const updateCarrito = (carritoId, usuarioId) =>
-  axios.put(`${API_BASE}/carrito/${carritoId}`, { usuarioId, estado: "COMPLETADO" }, { headers: authHeaders() });
+export const restarUno = async (prendaId, tallaId) => {
+  const params = StockParamsSchema.parse({ prendaId, tallaId });
+  const r = await axios.put(`${PRENDA_TALLAS_BASE}/stock/decremento`, null, { params, headers: authHeaders() });
+  return r.data.data;
+};
 
-export const actualizarCarrito = async (carritoId) => {
-  const usuarioId = await getUsuarioId();
-  await updateCarrito(carritoId, usuarioId);
+export const sumarStock = (prendaId, tallaId, cantidad) => {
+  const params = SumarStockParamsSchema.parse({ prendaId, tallaId, cantidad });
+  return axios.put(`${PRENDA_TALLAS_BASE}/stock/suma`, null, { params, headers: authHeaders() });
+};
+
+// ─── Cupones ──────────────────────────────────────────────────────────────────
+
+export const aplicarCupon = async (codigo) => {
+  const { codigo: codigoValido } = AplicarCuponSchema.parse({ codigo });
+  const descuento = await axios
+    .get(`${DESCUENTO_BASE}/descuento-codigos/codigo/${codigoValido}`, { headers: authHeaders() })
+    .then((r) => r.data.data);
+  return axios.post(
+    `${DESCUENTO_BASE}/descuento-usuarios`,
+    { descuentoCodigoId: descuento.id },
+    { headers: authHeaders() }
+  );
 };

@@ -1,25 +1,60 @@
 import axios from "axios";
-import { getUsuarioId } from "../../auth/api/userApi";
-import { API_BASE } from "../../../config/api";
+import { API_BASE_BASE } from "../../../config/api";
+import {
+  AgregarDetallesBodySchema,
+  UpdateVentaBodySchema,
+  VentaResponseSchema,
+  VentasDetalleResponseSchema,
+} from "../dto/venta.schema";
+
+const VENTAS_BASE = `${API_BASE_BASE}/api/ventas`;
 
 const authHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
 });
 
-export const createVenta = (usuarioId) =>
-  axios.post(`${API_BASE}/venta`, { usuarioId, estado: "PENDIENTE" }, { headers: authHeaders() }).then(r => r.data.object);
+// ─── Venta ────────────────────────────────────────────────────────────────────
 
-export const getSegundaPendiente = (usuarioId) =>
-  axios.get(`${API_BASE}/venta/segunda-pendiente/${usuarioId}`, { headers: authHeaders() }).then(r => r.data.object);
+// usuarioId viene del JWT — no se envía body
+export const createVenta = () =>
+  axios
+    .post(VENTAS_BASE, null, { headers: authHeaders() })
+    .then((r) => VentaResponseSchema.parse(r.data.data));
 
+export const getVenta = (ventaId) =>
+  axios
+    .get(`${VENTAS_BASE}/${ventaId}`, { headers: authHeaders() })
+    .then((r) => VentaResponseSchema.parse(r.data.data));
+
+// Devuelve el ID (número) de la segunda venta pendiente del usuario autenticado
+export const getSegundaPendiente = () =>
+  axios
+    .get(`${VENTAS_BASE}/segunda-pendiente`, { headers: authHeaders() })
+    .then((r) => r.data.data);
+
+// Solo ADMIN
 export const deleteVenta = (ventaId) =>
-  axios.delete(`${API_BASE}/venta/${ventaId}`, { headers: authHeaders() });
+  axios.delete(`${VENTAS_BASE}/${ventaId}`, { headers: authHeaders() });
 
-export const updateVenta = (ventaId, usuarioId) =>
-  axios.put(`${API_BASE}/venta/${ventaId}`, { id: ventaId, usuarioId, estado: "PAGADO" }, { headers: authHeaders() });
-
-export const actualizarVentaPagada = async () => {
-  const usuarioId = await getUsuarioId();
-  const ventaId = await getSegundaPendiente(usuarioId);
-  await updateVenta(ventaId, usuarioId);
+// Solo ADMIN — body: { estado }
+export const updateVenta = (ventaId, estado) => {
+  const body = UpdateVentaBodySchema.parse({ estado });
+  return axios
+    .put(`${VENTAS_BASE}/${ventaId}`, body, { headers: authHeaders() })
+    .then((r) => VentaResponseSchema.parse(r.data.data));
 };
+
+// ─── Carrito → VentasDetalle ──────────────────────────────────────────────────
+
+// Paso 2 del checkout: copia los CarritoItems como VentasDetalle de la venta
+export const agregarDetallesDesdeCarrito = (ventaId, carritoId) => {
+  const body = AgregarDetallesBodySchema.parse({ ventaId, carritoId });
+  return axios
+    .post(`${VENTAS_BASE}/carrito-detalle`, body, { headers: authHeaders() })
+    .then((r) => VentasDetalleResponseSchema.array().parse(r.data.data ?? []));
+};
+
+// ─── Compuestos ───────────────────────────────────────────────────────────────
+
+// Marca una venta como pagada (solo ADMIN)
+export const actualizarVentaPagada = (ventaId) => updateVenta(ventaId, "PAGADO");
