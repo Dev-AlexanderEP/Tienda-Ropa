@@ -1,34 +1,52 @@
 import axios from "axios";
-import { getUsuarioId } from "../../auth/api/userApi";
-import { API_BASE } from "../../../config/api";
+import { API_BASE_BASE } from "../../../config/api";
+import { DatosEnvioResponseSchema, EnvioResponseSchema } from "../dto/envio.schema";
 
-const authHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem("accessToken")}` });
+const DATOS_ENVIO_BASE = `${API_BASE_BASE}/api/datos-envio`;
+const ENVIO_BASE = `${API_BASE_BASE}/api/envio`;
 
-export const getEnvioTracking = (codigo) =>
-  axios.get(`${API_BASE}/envio/tracking/${codigo.trim()}`, { headers: authHeaders() }).then((r) => r.data);
+const authHeaders = () => ({
+  Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+});
 
-export const getDireccionesUsuario = (usuarioId) =>
-  axios.get(`${API_BASE}/direcciones/usuario/${usuarioId}`, { headers: authHeaders() }).then((r) => r.data.object ?? []);
+// --- DatosEnvio ---
 
-export const createDatoPersonal = (data) =>
-  axios.post(`${API_BASE}/dato-personal`, data, { headers: authHeaders() }).then(r => r.data.object.id);
+export const getMisDirecciones = () =>
+  axios
+    .get(`${DATOS_ENVIO_BASE}/mis-direcciones`, { headers: authHeaders() })
+    .then((r) => DatosEnvioResponseSchema.array().parse(r.data.data ?? []));
+
+export const createDatosEnvio = (data) =>
+  axios
+    .post(DATOS_ENVIO_BASE, data, { headers: authHeaders() })
+    .then((r) => DatosEnvioResponseSchema.parse(r.data.data));
+
+export const updateDatosEnvio = (id, data) =>
+  axios
+    .put(`${DATOS_ENVIO_BASE}/${id}`, data, { headers: authHeaders() })
+    .then((r) => DatosEnvioResponseSchema.parse(r.data.data));
+
+export const deleteDatosEnvio = (id) =>
+  axios.delete(`${DATOS_ENVIO_BASE}/${id}`, { headers: authHeaders() });
+
+// --- Envio ---
+
+export const getEnvioTracking = (trackingNumber) =>
+  axios
+    .get(`${ENVIO_BASE}/tracking/${trackingNumber.trim()}`, { headers: authHeaders() })
+    .then((r) => EnvioResponseSchema.parse(r.data.data));
 
 export const createEnvio = (data) =>
-  axios.post(`${API_BASE}/envio`, data, { headers: authHeaders() }).then(r => r.data.object.id);
+  axios
+    .post(ENVIO_BASE, data, { headers: authHeaders() })
+    .then((r) => EnvioResponseSchema.parse(r.data.data));
 
-export const createDireccion = (data) =>
-  axios.post(`${API_BASE}/direccion`, data, { headers: authHeaders() });
-
-export const enviarCorreo = (envioId) =>
-  axios.get(`${API_BASE}/registrar?id=${envioId}`, { headers: authHeaders() });
+// --- Funciones compuestas (usadas en checkout) ---
 
 export const registrarDatosPersonalesYEnvio = async (datos, ventaId) => {
-  const usuarioId = await getUsuarioId();
-
-  const datosPersonalesId = await createDatoPersonal({
+  const { id: datosEnvioId } = await createDatosEnvio({
     nombres: datos.nombre,
     apellidos: datos.apellidos,
-    usuarioId,
     dni: datos.documento,
     departamento: datos.departamento,
     provincia: datos.provincia,
@@ -40,38 +58,38 @@ export const registrarDatosPersonalesYEnvio = async (datos, ventaId) => {
   });
 
   const now = new Date();
-  const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
-  const finMes = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
-  const randomTracking = Array.from({ length: 10 }, () =>
+  const fechaEnvio = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+  const fechaEntrega = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
+  const trackingNumber = Array.from({ length: 10 }, () =>
     Math.random() < 0.5
       ? String.fromCharCode(65 + Math.floor(Math.random() * 26))
       : Math.floor(Math.random() * 9) + 1
   ).join("");
 
-  return await createEnvio({
+  const envio = await createEnvio({
     ventaId,
-    datosPersonalesId,
+    datosEnvioId,
     costoEnvio: 0,
-    fechaEnvio: inicioMes,
-    fechaEntrega: finMes,
-    estado: "EN PROCESO",
+    fechaEnvio,
+    fechaEntrega,
+    estado: "PREPARANDO",
     metodoEnvio: "Delivery",
-    trackingNumber: randomTracking,
+    trackingNumber,
   });
+
+  return envio.id;
 };
 
-export const guardarDireccion = async (datos) => {
-  const usuarioId = await getUsuarioId();
-  await createDireccion({
+export const guardarDireccion = (datos) =>
+  createDatosEnvio({
     nombres: datos.nombre,
     apellidos: datos.apellidos,
-    usuarioId,
     dni: datos.documento,
     departamento: datos.departamento,
     provincia: datos.provincia,
-    calle: datos.calle,
     distrito: datos.distrito,
+    calle: datos.calle,
     detalle: datos.detalle,
     telefono: datos.telefono,
+    email: datos.email,
   });
-};
