@@ -17,12 +17,13 @@ export default function RegisterForm() {
     register: registerField,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm({ resolver: zodResolver(RegisterSchema) });
+  } = useForm({ resolver: zodResolver(RegisterSchema), mode: "onTouched" });
 
   const onSubmit = async ({ nombreUsuario, email, contrasenia }) => {
     setServerError(null);
     try {
-      await register({ nombreUsuario, email, contrasenia });
+      const { token } = await register({ nombreUsuario, email, contrasenia });
+      localStorage.setItem("accessToken", token);
 
       const redirectPath = localStorage.getItem("redirectAfterLogin");
       if (redirectPath) {
@@ -34,8 +35,8 @@ export default function RegisterForm() {
     } catch (err) {
       if (err.response?.status === 409) {
         setServerError("El usuario o email ya existe. Intenta con otros datos.");
-      } else if (err.response?.data?.error) {
-        setServerError(err.response.data.error);
+      } else if (err.response?.data?.message) {
+        setServerError(err.response.data.message);
       } else {
         setServerError("Error al registrar. Intenta con otro usuario o correo.");
       }

@@ -1,50 +1,28 @@
 import axios from "axios";
-import { API_BASE, API_BASE_BASE } from "../../../config/api";
+import { API_BASE_BASE } from "../../../config/api";
 
-/**
- * @param {string} username
- * @param {string} password
- * @returns {Promise<import("../dto/auth.dto").LoginResponseDTO>}
- */
-export const login = (username, password) =>
+const AUTH_BASE = `${API_BASE_BASE}/api/auth`;
+
+const authHeaders = () => ({
+  Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+});
+
+export const login = ({ email, contrasenia }) =>
+  axios.post(`${AUTH_BASE}/login`, { email, contrasenia }).then((r) => r.data.data);
+
+export const loginWithGoogle = (idToken) =>
   axios
-    .post(
-      `${API_BASE_BASE}/token`,
-      new URLSearchParams({ username, password, grantType: "password", withRefreshToken: true }),
-      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
-    )
-    .then((res) => res.data);
+    .post(`${AUTH_BASE}/google`, JSON.stringify(idToken), {
+      headers: { "Content-Type": "application/json" },
+    })
+    .then((r) => r.data.data);
 
-/**
- * @param {string} credential
- * @param {string} clientId
- * @returns {Promise<import("../dto/auth.dto").LoginResponseDTO>}
- */
-export const loginWithGoogle = (credential, clientId) =>
+export const register = ({ nombreUsuario, email, contrasenia }) =>
   axios
-    .post(`${API_BASE_BASE}/google-login`, { credential, clientId })
-    .then((res) => res.data);
+    .post(`${AUTH_BASE}/register`, { nombreUsuario, email, contrasenia })
+    .then((r) => r.data.data);
 
-/**
- * @param {import("../dto/auth.dto").RegisterRequestDTO} data
- * @returns {Promise<void>}
- */
-export const register = async ({ nombreUsuario, email, contrasenia }) => {
-  const tokenRes = await axios.post(
-    `${API_BASE_BASE}/token`,
-    new URLSearchParams({
-      username: "admin@example.com",
-      password: "123456",
-      grantType: "password",
-      withRefreshToken: true,
-    }),
-    { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
-  );
-  const { accessToken } = tokenRes.data;
-
-  await axios.post(
-    `${API_BASE}/usuarios/create`,
-    { nombreUsuario, email, contrasenia },
-    { headers: { Authorization: `Bearer ${accessToken}` } }
-  );
-};
+export const changePassword = ({ contraseniaActual, contraseniaNueva }) =>
+  axios
+    .post(`${AUTH_BASE}/change-password`, { contraseniaActual, contraseniaNueva }, { headers: authHeaders() })
+    .then((r) => r.data.data);

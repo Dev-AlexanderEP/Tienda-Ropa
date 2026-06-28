@@ -10,7 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { login, loginWithGoogle } from "./api/authApi";
 import { LoginSchema } from "./dto/login.schema";
 
-const clientId = "609851888135-3dgcnr9mv7ifr7898p1trde1ga96ujoe.apps.googleusercontent.com";
+const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export default function LoginForm() {
   const [serverError, setServerError] = useState(null);
@@ -20,7 +20,7 @@ export default function LoginForm() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm({ resolver: zodResolver(LoginSchema) });
+  } = useForm({ resolver: zodResolver(LoginSchema), mode: "onTouched" });
 
   const redirectAfterLogin = () => {
     const redirectPath = localStorage.getItem("redirectAfterLogin");
@@ -32,12 +32,11 @@ export default function LoginForm() {
     }
   };
 
-  const onSubmit = async ({ username, password }) => {
+  const onSubmit = async ({ email, contrasenia }) => {
     setServerError(null);
     try {
-      const { accessToken, refreshToken } = await login(username, password);
-      localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("refreshToken", refreshToken);
+      const { token } = await login({ email, contrasenia });
+      localStorage.setItem("accessToken", token);
       redirectAfterLogin();
     } catch (err) {
       setServerError("Credenciales incorrectas");
@@ -48,12 +47,11 @@ export default function LoginForm() {
   const handleGoogleSuccess = async (response) => {
     setServerError(null);
     try {
-      const { accessToken, refreshToken } = await loginWithGoogle(response.credential, clientId);
-      localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("refreshToken", refreshToken);
+      const { token } = await loginWithGoogle(response.credential);
+      localStorage.setItem("accessToken", token);
       redirectAfterLogin();
     } catch (error) {
-      setServerError(error.response?.data?.error || "Error al autenticar con el backend");
+      setServerError(error.response?.data?.message || "Error al autenticar con el backend");
     }
   };
 
@@ -82,29 +80,29 @@ export default function LoginForm() {
                   Iniciar Sesión
                 </Typography>
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-                  <label htmlFor="username" className="text-xl font-medium">
-                    Usuario o Correo electrónico
+                  <label htmlFor="email" className="text-xl font-medium">
+                    Correo electrónico
                   </label>
                   <Input
-                    id="username"
-                    label="Usuario"
-                    type="text"
-                    {...register("username")}
+                    id="email"
+                    label="Email"
+                    type="email"
+                    {...register("email")}
                     className="border hover:border-red-600 hover:shadow-sm hover:outline-red-200 h-[50px] focus:outline-red-200 focus:border-red-500 text-[17px]"
                   />
-                  {errors.username && <p className="text-red-500 text-sm">{errors.username.message}</p>}
+                  {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
 
-                  <label htmlFor="password" className="text-xl font-medium">
+                  <label htmlFor="contrasenia" className="text-xl font-medium">
                     Contraseña
                   </label>
                   <Input
-                    id="password"
+                    id="contrasenia"
                     label="Contraseña"
                     type="password"
-                    {...register("password")}
+                    {...register("contrasenia")}
                     className="border hover:border-red-600 hover:shadow-sm hover:outline-red-200 h-[50px] focus:outline-red-200 focus:border-red-500 text-[17px]"
                   />
-                  {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
+                  {errors.contrasenia && <p className="text-red-500 text-sm">{errors.contrasenia.message}</p>}
 
                   <Button
                     type="submit"
