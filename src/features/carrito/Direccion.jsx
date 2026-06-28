@@ -3,7 +3,7 @@ import { Typography, Input, Textarea, Button, Checkbox } from "@material-tailwin
 import departamentosData from "./data/departamentos.json";
 import provinciasData from "./data/provincias.json";
 import distritosData from "./data/distritos.json";
-import { DireccionSchema } from "./dto/direccion.schema";
+import { DireccionSchema } from "../envio/dto/envio.schema";
 
 const Direccion = ({ datos, setDatos, onContinuar }) => {
   const [departamentos, setDepartamentos] = useState([]);

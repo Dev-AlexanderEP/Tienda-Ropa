@@ -20,6 +20,20 @@ export const CarritoItemResponseSchema = z.object({
   updatedAt: z.string().nullable().optional(),
 });
 
+export const CarritoItemDetalleResponseSchema = CarritoItemResponseSchema.extend({
+  prendaId: z.number(),
+  tallaId: z.number(),
+  prenda: z.object({
+    nombre: z.string(),
+    precio: z.number(),
+    imagenPrincipal: z.string().nullable().optional(),
+    nomMarca: z.string(),
+  }),
+  talla: z.object({
+    nomTalla: z.string(),
+  }),
+});
+
 // ─── Schemas de request / params ──────────────────────────────────────────────
 
 const id = z.number().int().positive();

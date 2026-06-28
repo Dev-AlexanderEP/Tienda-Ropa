@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DireccionSchema } from "./envio.schema";
 
 export const DatosPersonalesSchema = z.object({
   correo: z.string().email("Email inválido").max(50, "Máximo 50 caracteres"),
@@ -23,4 +24,4 @@ export const DatosPersonalesSchema = z.object({
   guardarData1: z.boolean().optional().default(false),
   deseaFactura: z.boolean().optional().default(false),
   novedades: z.boolean().optional().default(false),
-});
+}).merge(DireccionSchema.partial());

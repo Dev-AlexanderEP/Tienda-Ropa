@@ -3,6 +3,7 @@ import { API_BASE_BASE } from "../../../config/api";
 import {
   AgregarCarritoItemParamsSchema,
   AplicarCuponSchema,
+  CarritoItemDetalleResponseSchema,
   CarritoItemResponseSchema,
   CarritoResponseSchema,
   CreateCarritoItemBodySchema,
@@ -37,6 +38,11 @@ export const getCantidadItems = (carritoId) =>
   axios
     .get(`${CARRITOS_BASE}/${carritoId}/cantidad-items`, { headers: authHeaders() })
     .then((r) => r.data.data);
+
+export const getCarritoItems = (carritoId) =>
+  axios
+    .get(`${CARRITO_ITEMS_BASE}/carrito/${carritoId}`, { headers: authHeaders() })
+    .then((r) => CarritoItemDetalleResponseSchema.array().parse(r.data.data ?? []));
 
 // usuarioId viene del JWT — no se envía body
 export const createCarrito = () =>
@@ -109,9 +115,10 @@ export const aplicarCupon = async (codigo) => {
   const descuento = await axios
     .get(`${DESCUENTO_BASE}/descuento-codigos/codigo/${codigoValido}`, { headers: authHeaders() })
     .then((r) => r.data.data);
-  return axios.post(
+  await axios.post(
     `${DESCUENTO_BASE}/descuento-usuarios`,
     { descuentoCodigoId: descuento.id },
     { headers: authHeaders() }
   );
+  return descuento;
 };

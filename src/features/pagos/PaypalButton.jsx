@@ -29,7 +29,7 @@ const PaypalButton = ({ amount, ventaId, metodoId, carritoId, datos }) => {
           });
           try {
             await actions.order.capture();
-            await actualizarVentaPagada();
+            await actualizarVentaPagada(ventaId);
             await actualizarCarrito(carritoId);
 
             const envioId = await registrarDatosPersonalesYEnvio(datos, ventaId);

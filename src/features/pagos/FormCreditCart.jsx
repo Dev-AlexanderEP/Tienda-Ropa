@@ -34,7 +34,7 @@ const FormCreditCart = ({ amount, ventaId, metodoId, carritoId, datos }) => {
       });
 
       await createPago(ventaId, amount, metodoId);
-      await actualizarVentaPagada();
+      await actualizarVentaPagada(ventaId);
       await actualizarCarrito(carritoId);
 
       const envioId = await registrarDatosPersonalesYEnvio(datos, ventaId);

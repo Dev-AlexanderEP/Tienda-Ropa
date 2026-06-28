@@ -4,7 +4,6 @@ import PropTypes from "prop-types";
 import { IconButton, Typography, Input, Button } from "@material-tailwind/react";
 import { Plus, Minus, Trash2 } from "lucide-react";
 import Swal from "sweetalert2";
-import { getUsuarioId } from "../auth/api/userApi";
 import {
   getCarrito,
   updateItemCantidad,
@@ -93,15 +92,10 @@ const Productos = ({ carritoId, onNextStep, descuento, setDescuento, total, setT
         Swal.fire("Error", "No hay sesión activa.", "error");
         return;
       }
-      const usuarioId = await getUsuarioId();
-      const data = await aplicarCupon(usuarioId, cupon);
-      if (!data.object) {
-        Swal.fire("Cupón inválido", data.mensaje || "Cupón inválido", "error");
-        return;
-      }
-      setDescuento(data.object);
-      Swal.fire("Cupón aplicado", `Descuento: ${data.object.porcentaje}%`, "success");
-      setTotalConDescuento(total - (total * data.object.porcentaje) / 100);
+      const descuento = await aplicarCupon(cupon);
+      setDescuento(descuento);
+      Swal.fire("Cupón aplicado", `Descuento: ${descuento.porcentaje}%`, "success");
+      setTotalConDescuento(total - (total * descuento.porcentaje) / 100);
     } catch {
       Swal.fire("Error", "Error al aplicar cupón", "error");
     }

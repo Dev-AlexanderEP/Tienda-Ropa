@@ -1,6 +1,6 @@
 import axios from "axios";
 import { API_BASE_BASE } from "../../../config/api";
-import { DatosEnvioResponseSchema, EnvioResponseSchema } from "../dto/envio.schema";
+import { CreateDatosEnvioBodySchema, DatosEnvioResponseSchema, EnvioResponseSchema } from "../dto/envio.schema";
 
 const DATOS_ENVIO_BASE = `${API_BASE_BASE}/api/datos-envio`;
 const ENVIO_BASE = `${API_BASE_BASE}/api/envio`;
@@ -16,10 +16,11 @@ export const getMisDirecciones = () =>
     .get(`${DATOS_ENVIO_BASE}/mis-direcciones`, { headers: authHeaders() })
     .then((r) => DatosEnvioResponseSchema.array().parse(r.data.data ?? []));
 
-export const createDatosEnvio = (data) =>
-  axios
-    .post(DATOS_ENVIO_BASE, data, { headers: authHeaders() })
-    .then((r) => DatosEnvioResponseSchema.parse(r.data.data));
+export const createDatosEnvio = async (data) => {
+  const body = CreateDatosEnvioBodySchema.parse(data);
+  const r = await axios.post(DATOS_ENVIO_BASE, body, { headers: authHeaders() });
+  return DatosEnvioResponseSchema.parse(r.data.data);
+};
 
 export const updateDatosEnvio = (id, data) =>
   axios

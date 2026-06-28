@@ -14,8 +14,7 @@ import Direccion from "./Direccion";
 import MetodoPago from "../pagos/MetodoPago";
 
 // api
-import { getUsuarioId } from "../auth/api/userApi";
-import { getDireccionesUsuario } from "../envio/api/envioApi";
+import { getMisDirecciones } from "../envio/api/envioApi";
 
 export default function CarritoView() {
   const { id } = useParams();
@@ -45,8 +44,7 @@ export default function CarritoView() {
   useEffect(() => {
     const fetchDireccionGuardada = async () => {
       try {
-        const usuarioId = await getUsuarioId();
-        const direcciones = await getDireccionesUsuario(usuarioId);
+        const direcciones = await getMisDirecciones();
         if (direcciones.length > 0) {
           const dir = direcciones[0];
           setDatosPersonales(prev => ({

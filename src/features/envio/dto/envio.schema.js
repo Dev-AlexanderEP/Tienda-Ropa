@@ -1,5 +1,27 @@
 import { z } from "zod";
 
+export const DireccionSchema = z.object({
+  departamento: z.string().min(1, "Selecciona un departamento"),
+  provincia: z.string().min(1, "Selecciona una provincia"),
+  distrito: z.string().min(1, "Selecciona un distrito"),
+  calle: z.string().max(100, "Máximo 100 caracteres").optional().default(""),
+  detalle: z.string().max(200, "Máximo 200 caracteres").optional().default(""),
+  guardarData2: z.boolean().optional().default(false),
+});
+
+export const CreateDatosEnvioBodySchema = z.object({
+  nombres: z.string().min(1),
+  apellidos: z.string().min(1),
+  dni: z.string().length(8),
+  departamento: z.string().min(1),
+  provincia: z.string().min(1),
+  distrito: z.string().min(1),
+  calle: z.string().max(100).optional().default(""),
+  detalle: z.string().max(200).optional().default(""),
+  telefono: z.string().min(1),
+  email: z.string().email(),
+});
+
 export const DatosEnvioResponseSchema = z.object({
   id: z.number(),
   usuarioId: z.number(),

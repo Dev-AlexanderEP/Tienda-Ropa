@@ -3,10 +3,8 @@ import { useState } from "react";
 import { Input, Typography, Button, Checkbox } from "@material-tailwind/react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { DatosPersonalesSchema } from "./dto/datosPersonales.schema";
-import { getUsuarioId } from "../auth/api/userApi";
-import { createVenta, getSegundaPendiente, deleteVenta } from "./api/ventaApi";
-import { createCarritoDetalle } from "./api/carritoApi";
+import { DatosPersonalesSchema } from "../envio/dto/datosPersonales.schema";
+import { createVenta, getSegundaPendiente, deleteVenta, agregarDetallesDesdeCarrito } from "./api/ventaApi";
 
 const DatosPersonales = ({ datos, setDatos, onContinuar, carritoId, setVentaId }) => {
   const [serverError, setServerError] = useState(null);
@@ -28,24 +26,29 @@ const DatosPersonales = ({ datos, setDatos, onContinuar, carritoId, setVentaId }
       guardarData1: datos.guardarData1 || false,
       deseaFactura: datos.deseaFactura || false,
       novedades: datos.novedades || false,
+      departamento: datos.departamento || "",
+      provincia: datos.provincia || "",
+      distrito: datos.distrito || "",
+      calle: datos.calle || "",
+      detalle: datos.detalle || "",
+      guardarData2: datos.guardarData2 || false,
     },
   });
 
   const onSubmit = async (formData) => {
     setServerError(null);
-    setDatos(formData);
+    setDatos((prev) => ({ ...prev, ...formData }));
     try {
-      const usuarioId = await getUsuarioId();
-      const venta = await createVenta(usuarioId);
+      const venta = await createVenta();
       const ventaId = venta.id;
       setVentaId(ventaId);
 
-      const otraVentaPendienteId = await getSegundaPendiente(usuarioId);
+      const otraVentaPendienteId = await getSegundaPendiente();
       if (otraVentaPendienteId && otraVentaPendienteId !== ventaId) {
         await deleteVenta(otraVentaPendienteId);
       }
 
-      await createCarritoDetalle(ventaId, carritoId);
+      await agregarDetallesDesdeCarrito(ventaId, Number(carritoId));
       onContinuar();
     } catch (error) {
       setServerError("Ocurrió un error al procesar la venta. Intenta nuevamente.");

@@ -32,11 +32,9 @@ export const getSegundaPendiente = () =>
     .get(`${VENTAS_BASE}/segunda-pendiente`, { headers: authHeaders() })
     .then((r) => r.data.data);
 
-// Solo ADMIN
 export const deleteVenta = (ventaId) =>
   axios.delete(`${VENTAS_BASE}/${ventaId}`, { headers: authHeaders() });
 
-// Solo ADMIN — body: { estado }
 export const updateVenta = (ventaId, estado) => {
   const body = UpdateVentaBodySchema.parse({ estado });
   return axios
