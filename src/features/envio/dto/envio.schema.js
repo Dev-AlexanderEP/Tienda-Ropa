@@ -47,9 +47,51 @@ export const EnvioResponseSchema = z.object({
   costoEnvio: z.number(),
   fechaEnvio: z.string(),
   fechaEntrega: z.string().nullable().optional(),
-  estado: z.enum(["PREPARANDO", "EN_CAMINO", "ENTREGADO", "DEVUELTO"]),
+  estado: z.string(),
   metodoEnvio: z.string(),
   trackingNumber: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string().nullable().optional(),
+});
+
+export const EnvioTrackingResponseSchema = z.object({
+  id: z.number(),
+  trackingNumber: z.string().nullable().optional(),
+  estado: z.string(),
+  metodoEnvio: z.string(),
+  costoEnvio: z.number(),
+  fechaEnvio: z.string(),
+  fechaEntrega: z.string().nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string().nullable().optional(),
+  datosPersonales: z.object({
+    id: z.number(),
+    nombres: z.string(),
+    apellidos: z.string(),
+    dni: z.string(),
+    departamento: z.string(),
+    provincia: z.string(),
+    distrito: z.string(),
+    calle: z.string().nullable().optional(),
+    detalle: z.string(),
+    telefono: z.string(),
+    email: z.string(),
+  }),
+  venta: z.object({
+    id: z.number(),
+    estado: z.string().nullable().optional(),
+    fechaCreacion: z.string(),
+    detalles: z.array(z.object({
+      id: z.number(),
+      cantidad: z.number(),
+      precioUnitario: z.number(),
+      prenda: z.object({
+        nombre: z.string(),
+        imagenPrincipal: z.string().nullable().optional(),
+      }),
+      talla: z.object({
+        nomTalla: z.string(),
+      }),
+    })),
+  }),
 });

@@ -1,8 +1,8 @@
 import axios from "axios";
 import { API_BASE_BASE } from "../../../config/api";
-import { CreateDatosEnvioBodySchema, DatosEnvioResponseSchema, EnvioResponseSchema } from "../dto/envio.schema";
+import { CreateDatosEnvioBodySchema, DatosEnvioResponseSchema, EnvioResponseSchema, EnvioTrackingResponseSchema } from "../dto/envio.schema";
 
-const DATOS_ENVIO_BASE = `${API_BASE_BASE}/api/datos-envio`;
+const DATOS_ENVIO_BASE = `${API_BASE_BASE}/api/DatosEnvio`;
 const ENVIO_BASE = `${API_BASE_BASE}/api/envio`;
 
 const authHeaders = () => ({
@@ -22,20 +22,31 @@ export const createDatosEnvio = async (data) => {
   return DatosEnvioResponseSchema.parse(r.data.data);
 };
 
-export const updateDatosEnvio = (id, data) =>
-  axios
-    .put(`${DATOS_ENVIO_BASE}/${id}`, data, { headers: authHeaders() })
+export const updateDatosEnvio = (id, data) => {
+  const body = CreateDatosEnvioBodySchema.parse(data);
+  return axios
+    .put(`${DATOS_ENVIO_BASE}/${id}`, body, { headers: authHeaders() })
     .then((r) => DatosEnvioResponseSchema.parse(r.data.data));
+};
 
 export const deleteDatosEnvio = (id) =>
   axios.delete(`${DATOS_ENVIO_BASE}/${id}`, { headers: authHeaders() });
+
+// El backend permite un solo registro de DatosEnvio por usuario (409 si ya existe) —
+// hay que consultarlo primero y elegir POST o PUT según corresponda
+const guardarOActualizarDatosEnvio = async (data) => {
+  const direcciones = await getMisDirecciones();
+  return direcciones.length === 0
+    ? createDatosEnvio(data)
+    : updateDatosEnvio(direcciones[0].id, data);
+};
 
 // --- Envio ---
 
 export const getEnvioTracking = (trackingNumber) =>
   axios
     .get(`${ENVIO_BASE}/tracking/${trackingNumber.trim()}`, { headers: authHeaders() })
-    .then((r) => EnvioResponseSchema.parse(r.data.data));
+    .then((r) => EnvioTrackingResponseSchema.parse(r.data.data));
 
 export const createEnvio = (data) =>
   axios
@@ -45,7 +56,7 @@ export const createEnvio = (data) =>
 // --- Funciones compuestas (usadas en checkout) ---
 
 export const registrarDatosPersonalesYEnvio = async (datos, ventaId) => {
-  const { id: datosEnvioId } = await createDatosEnvio({
+  const { id: datosEnvioId } = await guardarOActualizarDatosEnvio({
     nombres: datos.nombre,
     apellidos: datos.apellidos,
     dni: datos.documento,
@@ -82,7 +93,7 @@ export const registrarDatosPersonalesYEnvio = async (datos, ventaId) => {
 };
 
 export const guardarDireccion = (datos) =>
-  createDatosEnvio({
+  guardarOActualizarDatosEnvio({
     nombres: datos.nombre,
     apellidos: datos.apellidos,
     dni: datos.documento,

@@ -24,4 +24,11 @@ export const DatosPersonalesSchema = z.object({
   guardarData1: z.boolean().optional().default(false),
   deseaFactura: z.boolean().optional().default(false),
   novedades: z.boolean().optional().default(false),
-}).merge(DireccionSchema.partial());
+}).merge(z.object({
+  departamento: z.string().optional().default(""),
+  provincia: z.string().optional().default(""),
+  distrito: z.string().optional().default(""),
+  calle: z.string().max(100).optional().default(""),
+  detalle: z.string().max(200).optional().default(""),
+  guardarData2: z.boolean().optional().default(false),
+}));
