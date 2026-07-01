@@ -16,19 +16,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useParams, useNavigate } from "react-router-dom";
 
 const STEPS = [
-  { label: "Procesando", icon: <Package className="h-8 w-8" /> },
-  { label: "Preparando", icon: <Home className="h-8 w-8" /> },
-  { label: "Enviado", icon: <Truck className="h-8 w-8" /> },
-  { label: "En camino", icon: <PackageCheck className="h-8 w-8" /> },
+  { label: "Preparando", icon: <Package className="h-8 w-8" /> },
+  { label: "En tránsito", icon: <Truck className="h-8 w-8" /> },
   { label: "Entregado", icon: <CheckCircle className="h-8 w-8" /> },
 ];
 
 const STEP_MAP = {
-  "EN PROCESO": 0,
-  PREPARANDO: 1,
-  ENVIADO: 2,
-  "EN CAMINO": 3,
-  ENTREGADO: 4,
+  PENDIENTE: 0,
+  PREPARANDO: 0,
+  EN_TRANSITO: 1,
+  EN_CAMINO: 1,
+  ENTREGADO: 2,
 };
 
 export default function EnvioTrackingView() {
