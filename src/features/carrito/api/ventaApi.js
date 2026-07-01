@@ -2,12 +2,11 @@ import axios from "axios";
 import { API_BASE_BASE } from "../../../config/api";
 import {
   AgregarDetallesBodySchema,
-  UpdateVentaBodySchema,
   VentaResponseSchema,
   VentasDetalleResponseSchema,
 } from "../dto/venta.schema";
 
-const VENTAS_BASE = `${API_BASE_BASE}/api/ventas`;
+const VENTAS_BASE = `${API_BASE_BASE}/api/Ventas`;
 
 const authHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
@@ -18,7 +17,7 @@ const authHeaders = () => ({
 // usuarioId viene del JWT — no se envía body
 export const createVenta = () =>
   axios
-    .post(VENTAS_BASE, null, { headers: authHeaders() })
+    .post(VENTAS_BASE, {}, { headers: { ...authHeaders(), "Content-Type": "application/json" } })
     .then((r) => VentaResponseSchema.parse(r.data.data));
 
 export const getVenta = (ventaId) =>
@@ -26,21 +25,19 @@ export const getVenta = (ventaId) =>
     .get(`${VENTAS_BASE}/${ventaId}`, { headers: authHeaders() })
     .then((r) => VentaResponseSchema.parse(r.data.data));
 
-// Devuelve el ID (número) de la segunda venta pendiente del usuario autenticado
+// Devuelve el ID (número) de la segunda venta pendiente del usuario autenticado,
+// o null si no existe (backend responde 404 en ese caso — no es un error real)
 export const getSegundaPendiente = () =>
   axios
     .get(`${VENTAS_BASE}/segunda-pendiente`, { headers: authHeaders() })
-    .then((r) => r.data.data);
+    .then((r) => r.data.data)
+    .catch((error) => {
+      if (error.response?.status === 404) return null;
+      throw error;
+    });
 
 export const deleteVenta = (ventaId) =>
   axios.delete(`${VENTAS_BASE}/${ventaId}`, { headers: authHeaders() });
-
-export const updateVenta = (ventaId, estado) => {
-  const body = UpdateVentaBodySchema.parse({ estado });
-  return axios
-    .put(`${VENTAS_BASE}/${ventaId}`, body, { headers: authHeaders() })
-    .then((r) => VentaResponseSchema.parse(r.data.data));
-};
 
 // ─── Carrito → VentasDetalle ──────────────────────────────────────────────────
 
@@ -51,8 +48,3 @@ export const agregarDetallesDesdeCarrito = (ventaId, carritoId) => {
     .post(`${VENTAS_BASE}/carrito-detalle`, body, { headers: authHeaders() })
     .then((r) => VentasDetalleResponseSchema.array().parse(r.data.data ?? []));
 };
-
-// ─── Compuestos ───────────────────────────────────────────────────────────────
-
-// Marca una venta como pagada (solo ADMIN)
-export const actualizarVentaPagada = (ventaId) => updateVenta(ventaId, "PAGADO");

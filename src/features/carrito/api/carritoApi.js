@@ -7,16 +7,15 @@ import {
   CarritoItemResponseSchema,
   CarritoResponseSchema,
   CreateCarritoItemBodySchema,
-  EstadoCarritoSchema,
   StockParamsSchema,
   SumarStockParamsSchema,
   UpdateItemCantidadSchema,
 } from "../dto/carrito.schema";
 
 const CARRITOS_BASE = `${API_BASE_BASE}/api/carritos`;
-const CARRITO_ITEMS_BASE = `${API_BASE_BASE}/api/carrito-items`;
-const PRENDA_TALLAS_BASE = `${API_BASE_BASE}/api/prenda-tallas`;
-const DESCUENTO_BASE = `${API_BASE_BASE}/api`;
+const CARRITO_ITEMS_BASE = `${API_BASE_BASE}/api/CarritoItems`;
+const PRENDA_TALLAS_BASE = `${API_BASE_BASE}/api/PrendaTallas`;
+const DESCUENTO_CODIGOS_BASE = `${API_BASE_BASE}/api/DescuentoCodigos`;
 
 const authHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
@@ -24,9 +23,10 @@ const authHeaders = () => ({
 
 // ─── Carrito ─────────────────────────────────────────────────────────────────
 
-export const getCarritoAbierto = (usuarioId) =>
+// El usuarioId de la ruta es ignorado para CLIENTE — el backend usa el JWT
+export const getCarritoAbierto = () =>
   axios
-    .get(`${CARRITOS_BASE}/abierto/usuario/${usuarioId}`, { headers: authHeaders() })
+    .get(`${CARRITOS_BASE}/abierto/usuario/0`, { headers: authHeaders() })
     .then((r) => CarritoResponseSchema.array().parse(r.data.data ?? []));
 
 export const getCarrito = (carritoId) =>
@@ -50,25 +50,15 @@ export const createCarrito = () =>
     .post(CARRITOS_BASE, null, { headers: authHeaders() })
     .then((r) => CarritoResponseSchema.parse(r.data.data));
 
-// body es el string del estado directamente, no un objeto
-export const updateCarrito = (carritoId, estado = "COMPLETADO") => {
-  const estadoValido = EstadoCarritoSchema.parse(estado);
-  return axios.put(`${CARRITOS_BASE}/${carritoId}`, JSON.stringify(estadoValido), {
-    headers: { ...authHeaders(), "Content-Type": "application/json" },
-  });
-};
-
 export const deleteCarrito = (carritoId) =>
   axios.delete(`${CARRITOS_BASE}/${carritoId}`, { headers: authHeaders() });
-
-export const actualizarCarrito = (carritoId) => updateCarrito(carritoId, "COMPLETADO");
 
 // ─── CarritoItem ──────────────────────────────────────────────────────────────
 
 // Agrega o incrementa por prendaId + tallaId — resuelve prendaTallaId internamente
 export const agregarCarritoItem = (carritoId, prendaId, tallaId) => {
   const params = AgregarCarritoItemParamsSchema.parse({ carritoId, prendaId, tallaId });
-  return axios.post(`${CARRITO_ITEMS_BASE}/agregar`, null, { params, headers: authHeaders() });
+  return axios.post(`${API_BASE_BASE}/api/CarritoItems/agregar`, null, { params, headers: authHeaders() });
 };
 
 // Usar solo cuando ya se conoce el prendaTallaId — preferir agregarCarritoItem
@@ -89,7 +79,7 @@ export const updateItemCantidad = (itemId, cantidad) => {
 export const deleteCarritoItem = (itemId) =>
   axios.delete(`${CARRITO_ITEMS_BASE}/${itemId}`, { headers: authHeaders() });
 
-// ─── Stock (solo ADMIN) ───────────────────────────────────────────────────────
+// ─── Stock ────────────────────────────────────────────────────────────────────
 
 export const sumarUno = async (prendaId, tallaId) => {
   const params = StockParamsSchema.parse({ prendaId, tallaId });
@@ -112,13 +102,18 @@ export const sumarStock = (prendaId, tallaId, cantidad) => {
 
 export const aplicarCupon = async (codigo) => {
   const { codigo: codigoValido } = AplicarCuponSchema.parse({ codigo });
-  const descuento = await axios
-    .get(`${DESCUENTO_BASE}/descuento-codigos/codigo/${codigoValido}`, { headers: authHeaders() })
-    .then((r) => r.data.data);
-  await axios.post(
-    `${DESCUENTO_BASE}/descuento-usuarios`,
-    { descuentoCodigoId: descuento.id },
+  const r = await axios.post(
+    `${DESCUENTO_CODIGOS_BASE}/codigo/${codigoValido}/aplicar`,
+    null,
     { headers: authHeaders() }
   );
-  return descuento;
+  return r.data.data;
+};
+
+export const quitarCupon = async (codigo) => {
+  const { codigo: codigoValido } = AplicarCuponSchema.parse({ codigo });
+  await axios.delete(
+    `${DESCUENTO_CODIGOS_BASE}/codigo/${codigoValido}/quitar`,
+    { headers: authHeaders() }
+  );
 };
