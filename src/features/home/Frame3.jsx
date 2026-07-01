@@ -3,14 +3,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { getUsuarioId } from "../auth/api/userApi";
 import { getPrendasPorGenero } from "../catalogo/api/catalogoApi";
 import {
   getCarritoAbierto,
   createCarrito,
   agregarCarritoItem,
-  createCarritoItem,
-  restarUno,
   getCantidadItems,
 } from "../carrito/api/carritoApi";
 
@@ -143,29 +140,18 @@ export default function Frame3() {
     }
 
     try {
-      const usuarioId = await getUsuarioId();
-
+      const abiertoRes = await getCarritoAbierto();
       let carritoId;
-      const abiertoRes = await getCarritoAbierto(usuarioId);
-      if (abiertoRes.object && abiertoRes.object.length > 0) {
-        carritoId = abiertoRes.object[0].id;
+      if (abiertoRes.length > 0) {
+        carritoId = abiertoRes[0].id;
       } else {
-        const carritoNuevo = await createCarrito(usuarioId);
+        const carritoNuevo = await createCarrito();
         carritoId = carritoNuevo.id;
       }
       localStorage.setItem("carritoId", carritoId);
 
-      try {
-        await agregarCarritoItem(carritoId, Number(producto.id), selectedTalla);
-        Swal.fire({ icon: "success", title: "Cantidad incrementada", showConfirmButton: false, timer: 1500 });
-      } catch {
-        const precioConDescuento = (producto.precio * (1 - producto.descuentoAplicado / 100)).toFixed(2);
-        const tallaObj = producto.tallas?.find((t) => t.talla.id === selectedTalla);
-        const tallaNombre = tallaObj ? tallaObj.talla.nomTalla : "";
-        await createCarritoItem(carritoId, Number(producto.id), tallaNombre, 1, Number(precioConDescuento));
-        await handleRestarUno(producto.id, selectedTalla);
-        Swal.fire({ icon: "success", title: "Producto agregado al carrito", showConfirmButton: false, timer: 1500 });
-      }
+      await agregarCarritoItem(carritoId, Number(producto.id), selectedTalla);
+      Swal.fire({ icon: "success", title: "Producto agregado al carrito", showConfirmButton: false, timer: 1500 });
 
       const cantidad = await getCantidadItems(carritoId);
       localStorage.setItem("cartCount", String(cantidad || 0));
@@ -173,17 +159,6 @@ export default function Frame3() {
     } catch (error) {
       Swal.fire({ icon: "error", title: "Error", text: "No se pudo agregar el producto al carrito." });
       console.error(error);
-    }
-  };
-
-  const handleRestarUno = async (prendaId, tallaId) => {
-    try {
-      const data = await restarUno(prendaId, tallaId);
-      if (!data.object) {
-        Swal.fire("Sin stock", data.mensaje || "No hay stock suficiente.", "warning");
-      }
-    } catch {
-      Swal.fire("Error", "No se pudo actualizar el stock.", "error");
     }
   };
 
