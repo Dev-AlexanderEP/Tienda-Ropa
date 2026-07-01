@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import PedidoTrackingForm from "../../components/envio/PedidoTrackingForm";
 import { motion, AnimatePresence } from "framer-motion";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 const STEPS = [
   { label: "Procesando", icon: <Package className="h-8 w-8" /> },
@@ -33,11 +33,20 @@ const STEP_MAP = {
 
 export default function EnvioTrackingView() {
   const params = useParams();
+  const navigate = useNavigate();
   const trackingFromUrl = params.tracking || ""; // puede ser undefined o string
   const [tracking, setTracking] = useState(trackingFromUrl);
   const [data, setData] = useState(null);
   const [step, setStep] = useState(0);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!localStorage.getItem("accessToken")) {
+      localStorage.setItem("redirectAfterLogin", window.location.pathname);
+      navigate("/login");
+    }
+  }, [navigate]);
+
   // Si la ruta es con tracking en url, busca automáticamente
   useEffect(() => {
     if (trackingFromUrl) {
@@ -228,7 +237,7 @@ export default function EnvioTrackingView() {
                       <tr key={item.id} className="border-t border-black/10">
                         <td className="py-2 px-3 max-md:hidden">
                           <img
-                            src={`${BASE_URL}/${item.prenda.imagen.principal}`}
+                            src={`${BASE_URL}/${item.prenda.imagenPrincipal}`}
                             alt={item.prenda.nombre}
                             className="w-16 h-16 object-cover rounded"
                           />
