@@ -29,9 +29,9 @@ export default function HomeView() {
     </div>
     {/* <WhatsAppButton /> */}
           <Frame2 />
-          <Frame3 />
-          <Frame4 />
-          <Frame5 />
+          {/* <Frame3 /> */}
+          {/* <Frame4 /> */}
+          {/* <Frame5 /> */}
           {/* <Frame6 /> */}
           {/* <Frame7 /> */}
           <Frame8 />
