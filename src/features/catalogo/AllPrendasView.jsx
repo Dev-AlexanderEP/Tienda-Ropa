@@ -9,7 +9,6 @@ const imgSrc = (path) => {
 };
 import { useParams } from "react-router-dom";
 import {  ChevronDown  } from 'lucide-react';
-import WhatsAppButton from "../../components/contact/WhatsAppButton";
 import { Search } from "lucide-react";
 
 import NavBarResponsive from "../../components/navbaar/NavBarResponsive";
@@ -188,8 +187,6 @@ React.useEffect(() => {
 
     return (
       <div className="w-full flex flex-col gap-5">
-        <WhatsAppButton />
-
         <NavBarResponsive />
         <div className=" w-full px-[100px]  flex justify-center max-lg:px-[20px]">
             

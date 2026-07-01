@@ -2,7 +2,6 @@
 import Navbar from "../../components/navbaar/NavBar";
 import NavBarResponsive from "../../components/navbaar/NavBarResponsive";
 import Carousel from "./carousel";
-import WhatsAppButton from "../../components/contact/WhatsAppButton";
 import FooterC from "../../components/footer/Footer";
 import Frame2 from "./Frame2";
 import Frame3 from "./Frame3";
@@ -27,7 +26,6 @@ export default function HomeView() {
       </div>
         
     </div>
-    {/* <WhatsAppButton /> */}
           <Frame2 />
           {/* <Frame3 /> */}
           {/* <Frame4 /> */}

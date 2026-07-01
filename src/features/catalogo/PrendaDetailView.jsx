@@ -8,7 +8,6 @@ import { Plus, Minus, Ruler, House, Store, BadgeCheck, Box     } from "lucide-re
 import { motion, AnimatePresence } from "framer-motion";
 import FooterC from "../../components/footer/Footer";
 import Swal from "sweetalert2";
-import WhatsAppButton from "../../components/contact/WhatsAppButton";
 import { getPrenda } from "./api/catalogoApi";
 import {
   getCarritoAbierto,
@@ -130,8 +129,6 @@ const handleAddToCart = async () => {
  return (
     <>
     <div className='h-full  flex flex-col gap-10 '>
-              <WhatsAppButton />
-      
       <NavBarResponsive />
       <div className="w-full   px-[10%] max-lg:px-[20px]">
         {/* primera parte */}
