@@ -6,6 +6,7 @@ import {
   PrendaConDescuentoTodoSchema,
   PrendaPrecioStatsSchema,
   PrendaResponseSchema,
+  PrendaDetalladaResponseSchema,
 } from "../dto/prendas.schema";
 
 const PRENDAS_BASE = `${API_BASE_BASE}/api/prendas`;
@@ -96,5 +97,5 @@ export const buscarPorNombreCategoria = (nombre, categoria, genero, signal) => {
 
 export const getPrenda = (id) =>
   axios
-    .get(`${PRENDAS_BASE}/${id}`, { headers: authHeaders() })
-    .then((r) => PrendaResponseSchema.parse(r.data.data));
+    .get(`${PRENDAS_BASE}/${id}/detalle`, { headers: authHeaders() })
+    .then((r) => PrendaDetalladaResponseSchema.parse(r.data.data));

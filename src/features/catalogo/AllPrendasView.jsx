@@ -1,6 +1,12 @@
 import * as React from "react";
 import { API_BASE_BASE as BASE_URL } from "../../config/api";
 import { Collapse, List, Checkbox, Card, Typography, Select  } from "@material-tailwind/react";
+
+const imgSrc = (path) => {
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
+  return `${BASE_URL}/${path}`;
+};
 import { useParams } from "react-router-dom";
 import {  ChevronDown  } from 'lucide-react';
 import WhatsAppButton from "../../components/contact/WhatsAppButton";
@@ -62,6 +68,7 @@ const handleSingleSelect = (value, setSelected) => (event) => {
   }
 };
 React.useEffect(() => {
+  if (busqueda.trim()) return;
   const fetchProductos = async () => {
     try {
       const params = new URLSearchParams();
@@ -121,7 +128,7 @@ React.useEffect(() => {
   };
 
   fetchProductos();
-}, [selectedCategoria, selectedTalla, selectedMarca, selectedPrecio, selectedDescuento, genero]);
+}, [selectedCategoria, selectedTalla, selectedMarca, selectedPrecio, selectedDescuento, genero, busqueda]);
 
 React.useEffect(() => {
 
@@ -132,8 +139,8 @@ React.useEffect(() => {
       getCategoriasPorGenero(genero).then(setCategorias).catch(() => setCategorias([]));
       getEstadisticasPreciosPorGenero(genero)
         .then((object) => {
-          if (object && Array.isArray(object[0])) {
-            const [minimo, , maximo] = object[0];
+          if (object && object.minimo != null && object.maximo != null) {
+            const { minimo, maximo } = object;
             const rangos = [
               { label: "S/ 20 - S/ 40", min: 20, max: 40 },
               { label: "S/ 40 - S/ 60", min: 40, max: 60 },
@@ -141,14 +148,7 @@ React.useEffect(() => {
               { label: "S/ 80 - S/ 100", min: 80, max: 100 },
               { label: "Más de S/ 100", min: 100, max: Infinity },
             ];
-            setRangosPrecios(
-              rangos.filter(
-                (r) =>
-                  (minimo <= r.max && maximo >= r.min) ||
-                  (minimo >= r.min && minimo <= r.max) ||
-                  (maximo >= r.min && maximo <= r.max)
-              )
-            );
+            setRangosPrecios(rangos.filter((r) => minimo <= r.max && maximo >= r.min));
           }
         })
         .catch(() => setRangosPrecios([]));
@@ -171,7 +171,7 @@ React.useEffect(() => {
         })
         .catch(() => setRangosDescuentos([]));
     }
-  }, [categoria]);
+  }, [genero]);
 
 React.useEffect(() => {
   const query = busqueda.trim();
@@ -676,17 +676,21 @@ React.useEffect(() => {
                     <div className="grid grid-cols-4 gap-4 max-lg:grid-cols-3 max-md:grid-cols-2 relative z-0">
                         {productos.map((producto) => (
                             <Card key={producto.id} className=" flex flex-col items-start shadow-md  rounded-none relative ">
-                               <a className="relative group  mb-2 "  href={`/${genero}/${producto.categoria}/${producto.id}/${producto.descuentoAplicado}`}>
+                               <a className="relative group mb-2 block w-full h-[280px] overflow-hidden" href={`/${genero}/${producto.categoria}/${producto.id}/${producto.descuentoAplicado}`}>
+                                    {imgSrc(producto.imagenPrincipal) && (
                                     <img
-                                    src={`${BASE_URL}/${producto.imagenPrincipal}`}
-                                    alt={producto.nombre}
-                                    className="w-full object-center  transition-opacity duration-300 absolute top-0 left-0 z-10 group-hover:opacity-0"
+                                        src={imgSrc(producto.imagenPrincipal)}
+                                        alt={producto.nombre}
+                                        className="w-full h-full object-cover transition-opacity duration-300 absolute top-0 left-0 z-10 group-hover:opacity-0"
                                     />
+                                    )}
+                                    {imgSrc(producto.imagenHover) && (
                                     <img
-                                    src={`${BASE_URL}/${producto.imagenHover}`}
-                                    alt={producto.nombre + ' hover'}
-                                    className="w-full object-contain  transition-opacity duration-300 obsolute  top-0 left-0 z-20 opacity-0 group-hover:opacity-100"
+                                        src={imgSrc(producto.imagenHover)}
+                                        alt={producto.nombre + ' hover'}
+                                        className="w-full h-full object-cover transition-opacity duration-300 absolute top-0 left-0 z-20 opacity-0 group-hover:opacity-100"
                                     />
+                                    )}
                                 </a>
                                 {/* Badge de descuento */}
                                 {producto.descuentoAplicado > 0 && (
@@ -699,7 +703,7 @@ React.useEffect(() => {
                                         {producto.marca}
                                     </Typography>
                                     <div className="flex flex-col gap-1">
-                                        <a  className="h-[50px]" href={`/${genero}/${categoria}/${producto.id}/${producto.descuentoAplicado}`}>
+                                        <a  className="h-[50px]" href={`/${genero}/${producto.categoria}/${producto.id}/${producto.descuentoAplicado}`}>
                                             {producto.nombre}
                                         </a>
                                         <Typography variant="small" className="text-gray-500  mb-1">

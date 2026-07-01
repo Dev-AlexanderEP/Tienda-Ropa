@@ -9,20 +9,21 @@ import { motion, AnimatePresence } from "framer-motion";
 import FooterC from "../../components/footer/Footer";
 import Swal from "sweetalert2";
 import WhatsAppButton from "../../components/contact/WhatsAppButton";
-import { getUsuarioId } from "../auth/api/userApi";
 import { getPrenda } from "./api/catalogoApi";
 import {
   getCarritoAbierto,
   createCarrito,
   agregarCarritoItem,
-  createCarritoItem,
-  restarUno,
   getCantidadItems,
 } from "../carrito/api/carritoApi";
 
 import { API_BASE_BASE as BASE_URL } from "../../config/api";
 
-
+const imgSrc = (path) => {
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
+  return `${BASE_URL}/${path}`;
+};
 
 const PrendaDetailView = () => {
   const { id,descuento } = useParams(); // Obtener el ID de la prenda desde la URL
@@ -67,7 +68,7 @@ const PrendaDetailView = () => {
       try {
         const data = await getPrenda(id);
         setPrenda(data);
-        setImagen(`${BASE_URL}/${data.imagen.principal}`);
+        setImagen(imgSrc(data.imagenPrincipal) ?? "");
         setLoading(false);
       } catch (error) {
         console.error("Error fetching prenda:", error);
@@ -104,28 +105,18 @@ const handleAddToCart = async () => {
   }
 
   try {
-    const usuarioId = await getUsuarioId();
-
+    const abiertoRes = await getCarritoAbierto();
     let carritoId;
-    const abiertoRes = await getCarritoAbierto(usuarioId);
-    if (abiertoRes.object && abiertoRes.object.length > 0) {
-      carritoId = abiertoRes.object[0].id;
+    if (abiertoRes.length > 0) {
+      carritoId = abiertoRes[0].id;
     } else {
-      const carritoNuevo = await createCarrito(usuarioId);
+      const carritoNuevo = await createCarrito();
       carritoId = carritoNuevo.id;
     }
     localStorage.setItem("carritoId", carritoId);
 
-    try {
-      await agregarCarritoItem(carritoId, Number(id), selectedTalla);
-      Swal.fire({ icon: "success", title: "Cantidad incrementada para el item existente", showConfirmButton: false, timer: 1500 });
-    } catch {
-      const selectedTallaObj = prenda.tallas.find((t) => t.talla.id === selectedTalla);
-      const tallaNombre = selectedTallaObj ? selectedTallaObj.talla.nomTalla : "";
-      await createCarritoItem(carritoId, Number(id), tallaNombre, 1, Number(precioConDescuento));
-      await handleRestarUno(id, selectedTalla);
-      Swal.fire({ icon: "success", title: "Producto agregado al carrito", showConfirmButton: false, timer: 1500 });
-    }
+    await agregarCarritoItem(carritoId, Number(id), selectedTalla);
+    Swal.fire({ icon: "success", title: "Producto agregado al carrito", showConfirmButton: false, timer: 1500 });
 
     const cantidad = await getCantidadItems(carritoId);
     localStorage.setItem("cartCount", String(cantidad || 0));
@@ -133,17 +124,6 @@ const handleAddToCart = async () => {
   } catch (error) {
     Swal.fire({ icon: "error", title: "Error", text: "No se pudo agregar el producto al carrito." });
     console.error(error);
-  }
-};
-
-const handleRestarUno = async (prendaId, tallaId) => {
-  try {
-    const data = await restarUno(prendaId, tallaId);
-    if (!data.object) {
-      Swal.fire("Sin stock", data.mensaje || "No hay stock suficiente.", "warning");
-    }
-  } catch {
-    Swal.fire("Error", "No se pudo actualizar el stock.", "error");
   }
 };
 
@@ -178,64 +158,70 @@ const handleRestarUno = async (prendaId, tallaId) => {
                         <div
                             className="  cursor-pointer w-full h-auto"
                             onClick={() =>
-                                setImagen(`${BASE_URL}/${prenda.imagen.principal}`)
+                                setImagen(imgSrc(prenda.imagenPrincipal) ?? "")
                             }
                             >
                             <img
-                                src={`${BASE_URL}/${prenda.imagen.principal}`}
+                                src={imgSrc(prenda.imagenPrincipal)}
                                 className=' object-contain w-full h-auto'
                                 alt={prenda.nombre}
                             />
                         </div>
 
-                        {prenda.imagen.video && (
+                        {prenda.imagenVideo && (
                         <div className="  cursor-pointer w-full h-auto"
                         onClick={() =>
-                            setImagen(`${BASE_URL}/${prenda.imagen.video}`)
+                            setImagen(imgSrc(prenda.imagenVideo) ?? "")
                         }>
                             <img src={img} alt="GIF de ejemplo" className=" object-contain w-full h-auto"
                             />
                         </div>
                         )}
 
+                        {prenda.imagenHover && (
                         <div
                             className="  cursor-pointer w-full h-auto"
                             onClick={() =>
-                                setImagen(`${BASE_URL}/${prenda.imagen.hover}`)
+                                setImagen(imgSrc(prenda.imagenHover) ?? "")
                             }
                         >
                             <img
-                                src={`${BASE_URL}/${prenda.imagen.hover}`}
+                                src={imgSrc(prenda.imagenHover)}
                                 className=' object-contain w-full h-auto'
                                 alt={`${prenda.nombre} hover`}
                             />
                         </div>
+                        )}
 
+                        {prenda.imagenExtra1 && (
                         <div
                             className="  cursor-pointer w-full h-auto"
                             onClick={() =>
-                            setImagen(`${BASE_URL}/${prenda.imagen.img1}`)
+                            setImagen(imgSrc(prenda.imagenExtra1) ?? "")
                             }
                         >
                             <img
-                            src={`${BASE_URL}/${prenda.imagen.img1}`}
+                            src={imgSrc(prenda.imagenExtra1)}
                                         className=' object-contain w-full h-auto'
                             alt={`${prenda.nombre} secundaria`}
                             />
                         </div>
+                        )}
 
+                        {prenda.imagenExtra2 && (
                         <div
                             className="  cursor-pointer w-full h-auto"
                             onClick={() =>
-                            setImagen(`${BASE_URL}/${prenda.imagen.img2}`)
+                            setImagen(imgSrc(prenda.imagenExtra2) ?? "")
                             }
                         >
                             <img
-                            src={`${BASE_URL}/${prenda.imagen.img2}`}
+                            src={imgSrc(prenda.imagenExtra2)}
                                         className=' object-contain w-full h-auto'
                             alt={`${prenda.nombre} secundaria`}
                             />
                         </div>
+                        )}
 
                     </div>
                     <div className=' h-[700px] w-[calc(100%-107px)] flex justify-center  max-lg:w-[100%]'>
@@ -321,14 +307,14 @@ const handleRestarUno = async (prendaId, tallaId) => {
                                 <div className="flex gap-2 ">
                                                                 {prenda.tallas.map((tallaObj) => (
                                   <button
-                                    key={tallaObj.talla.id}
+                                    key={tallaObj.tallaId}
                                     className={`border rounded-full h-[60px] w-[60px] hover:bg-gray-200 ${
-                                      selectedTalla === tallaObj.talla.id ? "border-black" : "border-gray-300"
+                                      selectedTalla === tallaObj.tallaId ? "border-black" : "border-gray-300"
                                     }`}
-                                    onClick={() => setSelectedTalla(tallaObj.talla.id)}
+                                    onClick={() => setSelectedTalla(tallaObj.tallaId)}
                                     type="button"
                                   >
-                                    {tallaObj.talla.nomTalla}
+                                    {tallaObj.nomTalla}
                                   </button>
                                 ))}
                                 </div>
