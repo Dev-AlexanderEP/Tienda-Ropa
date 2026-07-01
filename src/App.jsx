@@ -1,4 +1,5 @@
 import './index.css';
+import ChatWidget from './features/chat/ChatWidget';
 import './assets/fonts/fonts.css';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Suspense, lazy } from "react";
@@ -198,6 +199,7 @@ function App() {
 />
 
         </Routes>
+        <ChatWidget />
       </Router>
     </>
   )
