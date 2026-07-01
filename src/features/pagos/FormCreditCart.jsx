@@ -3,10 +3,8 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Swal from "sweetalert2";
 import { CreditCardSchema } from "./dto/creditCard.schema";
-import { actualizarVentaPagada } from "../carrito/api/ventaApi";
-import { actualizarCarrito } from "../carrito/api/carritoApi";
 import { createPago } from "./api/pagosApi";
-import { registrarDatosPersonalesYEnvio, guardarDireccion, enviarCorreo } from "../envio/api/envioApi";
+import { registrarDatosPersonalesYEnvio, guardarDireccion } from "../envio/api/envioApi";
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 12 }, (_, i) => currentYear + i);
@@ -33,17 +31,21 @@ const FormCreditCart = ({ amount, ventaId, metodoId, carritoId, datos }) => {
         didOpen: () => Swal.showLoading(),
       });
 
-      await createPago(ventaId, amount, metodoId);
-      await actualizarVentaPagada(ventaId);
-      await actualizarCarrito(carritoId);
+      const pago = await createPago(ventaId, metodoId);
+      if (pago.estado !== "COMPLETADO") {
+        Swal.fire({
+          icon: "error",
+          title: "Pago no completado",
+          text: `El pago quedó en estado "${pago.estado}". Intenta nuevamente.`,
+        });
+        return;
+      }
 
       const envioId = await registrarDatosPersonalesYEnvio(datos, ventaId);
 
       if (datos.guardarData1 && datos.guardarData2) {
         await guardarDireccion(datos);
       }
-
-      await enviarCorreo(envioId);
 
       localStorage.removeItem("carritoId");
       localStorage.setItem("cartCount", "0");
