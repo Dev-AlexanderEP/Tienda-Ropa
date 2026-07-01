@@ -1,18 +1,16 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { getCarrito } from "./api/carritoApi";
-
-import { API_BASE_BASE } from "../../config/api";
+import { getCarritoItems } from "./api/carritoApi";
 
 const ResumenCompra = ({ carritoId, descuento, onNextStep }) => {
-  const [carrito, setCarrito] = useState(null);
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await getCarrito(carritoId);
-        setCarrito(data);
+        const data = await getCarritoItems(carritoId);
+        setItems(data);
       } finally {
         setLoading(false);
       }
@@ -21,9 +19,8 @@ const ResumenCompra = ({ carritoId, descuento, onNextStep }) => {
   }, [carritoId]);
 
   if (loading) return <div>Cargando...</div>;
-  if (!carrito) return <div>No se encontró el carrito.</div>;
 
-  const subtotal = carrito.carritoItems.reduce(
+  const subtotal = items.reduce(
     (acc, item) => acc + item.precioUnitario * item.cantidad,
     0
   );
@@ -34,10 +31,10 @@ const ResumenCompra = ({ carritoId, descuento, onNextStep }) => {
     <div className="bg-white rounded-lg p-6 shadow w-full">
       <h3 className="font-bold text-xl text-center mb-4">Resumen de la compra</h3>
       <div className="mb-4">
-        {carrito.carritoItems.map((item) => (
+        {items.map((item) => (
           <div key={item.id} className="flex items-center gap-2 mb-2">
             <img
-              src={`${API_BASE_BASE}/${item.prenda.imagen.principal}`}
+              src={item.prenda.imagenPrincipal}
               alt={item.prenda.nombre}
               className="w-10 h-12 object-cover rounded"
             />

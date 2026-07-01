@@ -5,17 +5,24 @@ import { IconButton, Typography, Input, Button } from "@material-tailwind/react"
 import { Plus, Minus, Trash2 } from "lucide-react";
 import Swal from "sweetalert2";
 import {
-  getCarrito,
+  getCarritoItems,
   updateItemCantidad,
   sumarUno,
   restarUno,
   sumarStock,
   deleteCarritoItem,
   aplicarCupon,
+  quitarCupon,
 } from "./api/carritoApi";
 
+const imgSrc = (path) => {
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
+  return `${BASE_URL}/${path}`;
+};
+
 const Productos = ({ carritoId, onNextStep, descuento, setDescuento, total, setTotal }) => {
-  const [carrito, setCarrito] = useState(null);
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cupon, setCupon] = useState("");
   const [totalConDescuento, setTotalConDescuento] = useState(0);
@@ -24,13 +31,10 @@ const Productos = ({ carritoId, onNextStep, descuento, setDescuento, total, setT
   const fetchCarrito = async () => {
     setLoading(true);
     try {
-      const data = await getCarrito(carritoId);
-      setCarrito(data);
-      const totalSum = data?.carritoItems?.reduce(
-        (acc, item) => acc + item.precioUnitario * item.cantidad,
-        0
-      );
-      setTotal(totalSum || 0);
+      const data = await getCarritoItems(carritoId);
+      setItems(data);
+      const totalSum = data.reduce((acc, item) => acc + item.precioUnitario * item.cantidad, 0);
+      setTotal(totalSum);
     } finally {
       setLoading(false);
     }
@@ -44,27 +48,19 @@ const Productos = ({ carritoId, onNextStep, descuento, setDescuento, total, setT
 
   const handleChangeCantidad = (itemId, cantidad) => {
     if (cantidad < 1) return;
-    setCarrito((prev) => {
-      if (!prev) return prev;
-      return { ...prev, carritoItems: prev.carritoItems.map((item) => item.id === itemId ? { ...item, cantidad } : item) };
-    });
-    setTotal((prevTotal) => {
-      if (!carrito) return prevTotal;
-      return carrito.carritoItems
+    setItems((prev) => prev.map((item) => item.id === itemId ? { ...item, cantidad } : item));
+    setTotal(
+      items
         .map((item) => (item.id === itemId ? { ...item, cantidad } : item))
-        .reduce((acc, item) => acc + item.precioUnitario * item.cantidad, 0);
-    });
+        .reduce((acc, item) => acc + item.precioUnitario * item.cantidad, 0)
+    );
     updateItemCantidad(itemId, cantidad).catch(() => fetchCarrito());
   };
 
   const handleRestarUno = async (item) => {
     if (item.cantidad <= 1) return;
     try {
-      const data = await sumarUno(item.prenda.id, item.talla.id);
-      if (!data.object) {
-        Swal.fire("Sin stock", data.mensaje || "No hay stock suficiente.", "warning");
-        return;
-      }
+      await sumarUno(item.prendaId, item.tallaId);
       handleChangeCantidad(item.id, item.cantidad - 1);
     } catch {
       Swal.fire("Error", "No se pudo actualizar el stock.", "error");
@@ -73,14 +69,10 @@ const Productos = ({ carritoId, onNextStep, descuento, setDescuento, total, setT
 
   const handleSumarUno = async (item) => {
     try {
-      const data = await restarUno(item.prenda.id, item.talla.id);
-      if (!data.object) {
-        Swal.fire("Sin stock", data.mensaje || "No hay stock suficiente.", "warning");
-        return;
-      }
+      await restarUno(item.prendaId, item.tallaId);
       handleChangeCantidad(item.id, item.cantidad + 1);
     } catch {
-      Swal.fire("Error", "No se pudo actualizar el stock.", "error");
+      Swal.fire("Sin stock", "No hay stock suficiente.", "warning");
     }
   };
 
@@ -96,10 +88,22 @@ const Productos = ({ carritoId, onNextStep, descuento, setDescuento, total, setT
       setDescuento(descuento);
       Swal.fire("Cupón aplicado", `Descuento: ${descuento.porcentaje}%`, "success");
       setTotalConDescuento(total - (total * descuento.porcentaje) / 100);
-    } catch {
-      Swal.fire("Error", "Error al aplicar cupón", "error");
+    } catch (err) {
+      const msg = err?.response?.data?.message || "Error al aplicar el cupón. Intenta nuevamente.";
+      Swal.fire("Cupón inválido", msg, "error");
     }
     setAplicando(false);
+  };
+
+  const handleQuitarCupon = async () => {
+    try {
+      await quitarCupon(descuento.codigo);
+      setDescuento(null);
+      setCupon("");
+    } catch (err) {
+      const msg = err?.response?.data?.message || "No se pudo quitar el cupón.";
+      Swal.fire("Error", msg, "error");
+    }
   };
 
   const handleEliminarItem = (itemId, item) => {
@@ -113,7 +117,7 @@ const Productos = ({ carritoId, onNextStep, descuento, setDescuento, total, setT
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await sumarStock(item.prenda.id, item.talla.id, item.cantidad);
+          await sumarStock(item.prendaId, item.tallaId, item.cantidad);
           await deleteCarritoItem(itemId);
           fetchCarrito();
           Swal.fire("Eliminado", "El producto fue eliminado del carrito.", "success");
@@ -133,7 +137,7 @@ const Productos = ({ carritoId, onNextStep, descuento, setDescuento, total, setT
   }, [total, descuento]);
 
   if (loading) return <div>Cargando productos...</div>;
-  if (!carrito) return <div>No se encontró el carrito.</div>;
+  if (items.length === 0) return <div>No hay productos en el carrito.</div>;
 
   return (
     <div className="w-full mt-6 flex px-[10%] gap-10 max-xl:flex-col max-md:px-[5%]">
@@ -148,19 +152,21 @@ const Productos = ({ carritoId, onNextStep, descuento, setDescuento, total, setT
             </tr>
           </thead>
           <tbody>
-            {carrito.carritoItems.map((item) => (
+            {items.map((item) => (
               <tr key={item.id} className="align-middle">
                 <td className="py-4 border-b border-slate-600">
                   <div className="flex items-center flex-col gap-4">
-                    <img
-                      src={`${BASE_URL}/${item.prenda.imagen.principal}`}
-                      alt={item.prenda.nombre}
-                      className="w-16 h-20 object-cover rounded max-sm:hidden"
-                    />
+                    {imgSrc(item.prenda.imagenPrincipal) && (
+                      <img
+                        src={imgSrc(item.prenda.imagenPrincipal)}
+                        alt={item.prenda.nombre}
+                        className="w-16 h-20 object-cover rounded max-sm:hidden"
+                      />
+                    )}
                     <div>
                       <div className="font-semibold">{item.prenda.nombre}</div>
                       <div className="text-xs text-gray-500">
-                        Talla: {item.talla.nomTalla} | Marca: {item.prenda.marca.nomMarca}
+                        Talla: {item.talla.nomTalla} | Marca: {item.prenda.nomMarca}
                       </div>
                     </div>
                   </div>
@@ -223,8 +229,15 @@ const Productos = ({ carritoId, onNextStep, descuento, setDescuento, total, setT
             </Button>
           </div>
           {descuento && (
-            <div className="mb-2 text-center text-green-700 font-semibold">
-              Descuento aplicado: {descuento.porcentaje}% ({descuento.descripcion})
+            <div className="mb-2 flex items-center justify-between gap-2 text-green-700 font-semibold">
+              <span>Descuento aplicado: {descuento.porcentaje}% ({descuento.descripcion})</span>
+              <button
+                type="button"
+                onClick={handleQuitarCupon}
+                className="text-red-500 text-xs underline whitespace-nowrap"
+              >
+                Quitar
+              </button>
             </div>
           )}
           <hr className="my-4" />

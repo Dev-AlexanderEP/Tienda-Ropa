@@ -45,7 +45,9 @@ const DatosPersonales = ({ datos, setDatos, onContinuar, carritoId, setVentaId }
 
       const otraVentaPendienteId = await getSegundaPendiente();
       if (otraVentaPendienteId && otraVentaPendienteId !== ventaId) {
-        await deleteVenta(otraVentaPendienteId);
+        // Limpieza best-effort de una venta duplicada abandonada — si falla
+        // (p. ej. ya no es propia, ya fue eliminada) no debe bloquear el checkout.
+        await deleteVenta(otraVentaPendienteId).catch((err) => console.error("No se pudo limpiar venta duplicada:", err));
       }
 
       await agregarDetallesDesdeCarrito(ventaId, Number(carritoId));
