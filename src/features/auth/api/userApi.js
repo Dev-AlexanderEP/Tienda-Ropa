@@ -1,7 +1,2 @@
-import axios from "axios";
-import { API_BASE_BASE } from "../../../config/api";
-
-const authHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem("accessToken")}` });
-
-export const getUsuarioId = () =>
-  axios.get(`${API_BASE_BASE}/usuario-id`, { headers: authHeaders() }).then((r) => r.data);
+// Este módulo está reservado para operaciones de usuario autenticado.
+// El usuarioId se extrae del JWT en el backend — no se recupera desde el frontend.
