@@ -19,6 +19,9 @@ import BasicosContent from './components/navbaar/categorias/BasicosContent';
 import InfantilContent from './components/navbaar/categorias/InfantilContent';
 
 import AllPrendas from './pages/AllPrendasPage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
+import RecuperarPasswordPage from './pages/RecuperarPasswordPage';
+
 function App() {
   return (
     <>
@@ -27,6 +30,8 @@ function App() {
           <Route path="/" element={<Suspense fallback={<div>Cargando...</div>}><Index /></Suspense>} />
           <Route path="/login" element={<Suspense fallback={<div>Cargando...</div>}><Login /></Suspense>} />
           <Route path="/register" element={<Suspense fallback={<div>Cargando...</div>}><Register /></Suspense>} />
+          <Route path="/cambiar-contrasenia" element={<Suspense fallback={<div>Cargando...</div>}><ChangePasswordPage /></Suspense>} />
+          <Route path="/recuperar-contrasenia" element={<Suspense fallback={<div>Cargando...</div>}><RecuperarPasswordPage /></Suspense>} />
           <Route path="/mujer/:categoria" element={<Suspense fallback={<div>Cargando...</div>}><FilterPage /></Suspense>} />
           <Route path="/hombre/:categoria" element={<Suspense fallback={<div>Cargando...</div>}><FilterPage /></Suspense>} />
           <Route path="/infantil-ninios/:categoria" element={<Suspense fallback={<div>Cargando...</div>}><FilterPage /></Suspense>} />

@@ -104,6 +104,12 @@ export default function LoginForm() {
                   />
                   {errors.contrasenia && <p className="text-red-500 text-sm">{errors.contrasenia.message}</p>}
 
+                  <div className="flex justify-end">
+                    <a href="/recuperar-contrasenia" className="text-xs text-gray-400 hover:text-gray-600 hover:underline">
+                      ¿Olvidaste tu contraseña?
+                    </a>
+                  </div>
+
                   <Button
                     type="submit"
                     variant="outline"
