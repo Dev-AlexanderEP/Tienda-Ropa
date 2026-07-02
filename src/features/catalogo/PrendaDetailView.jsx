@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import FooterC from "../../components/footer/Footer";
 import Swal from "sweetalert2";
 import { getPrenda } from "./api/catalogoApi";
-import { getReseniasPublicas, createResenia } from "./api/reseniasApi";
+import { getReseniasPublicas, getMiResenia, createResenia, updateResenia } from "./api/reseniasApi";
 import {
   getCarritoAbierto,
   createCarrito,
@@ -40,6 +40,7 @@ const PrendaDetailView = () => {
   const [selectedTalla, setSelectedTalla] = useState(null);
 
   const [resenias, setResenias] = useState([]);
+  const [miResenia, setMiResenia] = useState(null);
   const [nuevaCalificacion, setNuevaCalificacion] = useState(0);
   const [nuevoComentario, setNuevoComentario] = useState("");
   const [enviandoResenia, setEnviandoResenia] = useState(false);
@@ -85,28 +86,43 @@ const PrendaDetailView = () => {
   }, [id]);
 
   useEffect(() => {
-    getReseniasPublicas(id)
-      .then(setResenias)
-      .catch(() => {});
+    getReseniasPublicas(id).then(setResenias).catch(() => {});
   }, [id]);
+
+  useEffect(() => {
+    if (!isUserLoggedIn()) return;
+    getMiResenia(id).then(setMiResenia).catch(() => {});
+  }, [id]);
+
+  const handleAbrirEdicion = () => {
+    setNuevaCalificacion(miResenia.calificacion);
+    setNuevoComentario(miResenia.comentario ?? "");
+    setMostrarFormResenia(true);
+  };
+
+  const handleCancelarForm = () => {
+    setMostrarFormResenia(false);
+    setNuevaCalificacion(0);
+    setNuevoComentario("");
+  };
 
   const handleSubmitResenia = async () => {
     if (!nuevaCalificacion) return;
     setEnviandoResenia(true);
     try {
-      await createResenia(Number(id), nuevaCalificacion, nuevoComentario || null);
-      Swal.fire({
-        icon: "success",
-        title: "Reseña enviada",
-        text: "Tu reseña está pendiente de aprobación.",
-        showConfirmButton: false,
-        timer: 2000,
-      });
+      if (miResenia) {
+        await updateResenia(miResenia.id, nuevaCalificacion, nuevoComentario || null);
+        Swal.fire({ icon: "success", title: "Reseña actualizada", showConfirmButton: false, timer: 2000 });
+      } else {
+        await createResenia(Number(id), nuevaCalificacion, nuevoComentario || null);
+        Swal.fire({ icon: "success", title: "Reseña enviada", text: "Quedará pendiente de aprobación.", showConfirmButton: false, timer: 2000 });
+      }
       setNuevaCalificacion(0);
       setNuevoComentario("");
       setMostrarFormResenia(false);
-      const data = await getReseniasPublicas(id);
-      setResenias(data);
+      const [publica, mia] = await Promise.all([getReseniasPublicas(id), getMiResenia(id)]);
+      setResenias(publica);
+      setMiResenia(mia);
     } catch (err) {
       const msg = err?.response?.data?.message ?? "No se pudo enviar la reseña.";
       Swal.fire({ icon: "error", title: "Error", text: msg });
@@ -514,12 +530,21 @@ const handleAddToCart = async () => {
           </div>
 
           {isUserLoggedIn() ? (
-            <button
-              className="border border-black font-Poppins text-sm font-semibold px-5 py-2 rounded hover:bg-black hover:text-white transition-colors"
-              onClick={() => setMostrarFormResenia((v) => !v)}
-            >
-              {mostrarFormResenia ? "Cancelar" : "Escribir reseña"}
-            </button>
+            miResenia ? (
+              <button
+                className="border border-black font-Poppins text-sm font-semibold px-5 py-2 rounded hover:bg-black hover:text-white transition-colors"
+                onClick={mostrarFormResenia ? handleCancelarForm : handleAbrirEdicion}
+              >
+                {mostrarFormResenia ? "Cancelar" : "Editar mi reseña"}
+              </button>
+            ) : (
+              <button
+                className="border border-black font-Poppins text-sm font-semibold px-5 py-2 rounded hover:bg-black hover:text-white transition-colors"
+                onClick={mostrarFormResenia ? handleCancelarForm : () => setMostrarFormResenia(true)}
+              >
+                {mostrarFormResenia ? "Cancelar" : "Escribir reseña"}
+              </button>
+            )
           ) : (
             <button
               className="border border-gray-300 text-gray-500 font-Poppins text-sm px-5 py-2 rounded hover:border-black hover:text-black transition-colors"
@@ -566,12 +591,44 @@ const handleAddToCart = async () => {
                   onClick={handleSubmitResenia}
                   disabled={!nuevaCalificacion || enviandoResenia}
                 >
-                  {enviandoResenia ? "Enviando..." : "Publicar reseña"}
+                  {enviandoResenia ? "Guardando..." : miResenia ? "Guardar cambios" : "Publicar reseña"}
                 </Button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Mi reseña (pendiente / aprobada / rechazada) */}
+        {isUserLoggedIn() && miResenia && !mostrarFormResenia && (
+          <div className={`max-w-2xl mb-6 p-4 rounded border-l-4 ${
+            miResenia.estado === "APROBADA"  ? "border-green-500 bg-green-50" :
+            miResenia.estado === "RECHAZADA" ? "border-red-400 bg-red-50"   :
+                                               "border-yellow-400 bg-yellow-50"
+          }`}>
+            <div className="flex items-center justify-between mb-1">
+              <Typography className="text-sm font-semibold font-Poppins">Tu reseña</Typography>
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded ${
+                miResenia.estado === "APROBADA"  ? "bg-green-100 text-green-700" :
+                miResenia.estado === "RECHAZADA" ? "bg-red-100 text-red-700"   :
+                                                   "bg-yellow-100 text-yellow-700"
+              }`}>
+                {miResenia.estado === "APROBADA"  ? "Aprobada" :
+                 miResenia.estado === "RECHAZADA" ? "Rechazada" : "Pendiente de aprobación"}
+              </span>
+            </div>
+            <div className="flex gap-0.5 mb-1">
+              {[1,2,3,4,5].map((s) => (
+                <Star key={s} className={`h-4 w-4 ${s <= miResenia.calificacion ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} />
+              ))}
+            </div>
+            {miResenia.comentario && (
+              <Typography className="text-gray-600 text-sm font-Poppins">{miResenia.comentario}</Typography>
+            )}
+            {miResenia.estado === "RECHAZADA" && miResenia.motivoRechazo && (
+              <Typography className="text-red-600 text-xs font-Poppins mt-1">Motivo: {miResenia.motivoRechazo}</Typography>
+            )}
+          </div>
+        )}
 
         {/* Lista de reseñas */}
         <div className="flex flex-col gap-6 max-w-2xl">
