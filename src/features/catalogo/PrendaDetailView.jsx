@@ -4,11 +4,12 @@ import Navbar from '../../components/navbaar/NavBar';
 import NavBarResponsive from '../../components/navbaar/NavBarResponsive';
 import img from "../../assets/images/img.gif";
 import { Typography, Collapse, List, Button, Breadcrumb  } from "@material-tailwind/react";
-import { Plus, Minus, Ruler, House, Store, BadgeCheck, Box     } from "lucide-react";
+import { Plus, Minus, Ruler, House, Store, BadgeCheck, Box, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import FooterC from "../../components/footer/Footer";
 import Swal from "sweetalert2";
 import { getPrenda } from "./api/catalogoApi";
+import { getReseniasPublicas, createResenia } from "./api/reseniasApi";
 import {
   getCarritoAbierto,
   createCarrito,
@@ -37,6 +38,12 @@ const PrendaDetailView = () => {
   const [openCarac, setOpenCarac] = useState(false);
   const [openMedidas, setOpenMedidas] = useState(false);
   const [selectedTalla, setSelectedTalla] = useState(null);
+
+  const [resenias, setResenias] = useState([]);
+  const [nuevaCalificacion, setNuevaCalificacion] = useState(0);
+  const [nuevoComentario, setNuevoComentario] = useState("");
+  const [enviandoResenia, setEnviandoResenia] = useState(false);
+  const [mostrarFormResenia, setMostrarFormResenia] = useState(false);
 
   
   const navigate = useNavigate();
@@ -76,6 +83,37 @@ const PrendaDetailView = () => {
     };
     fetchPrenda();
   }, [id]);
+
+  useEffect(() => {
+    getReseniasPublicas(id)
+      .then(setResenias)
+      .catch(() => {});
+  }, [id]);
+
+  const handleSubmitResenia = async () => {
+    if (!nuevaCalificacion) return;
+    setEnviandoResenia(true);
+    try {
+      await createResenia(Number(id), nuevaCalificacion, nuevoComentario || null);
+      Swal.fire({
+        icon: "success",
+        title: "Reseña enviada",
+        text: "Tu reseña está pendiente de aprobación.",
+        showConfirmButton: false,
+        timer: 2000,
+      });
+      setNuevaCalificacion(0);
+      setNuevoComentario("");
+      setMostrarFormResenia(false);
+      const data = await getReseniasPublicas(id);
+      setResenias(data);
+    } catch (err) {
+      const msg = err?.response?.data?.message ?? "No se pudo enviar la reseña.";
+      Swal.fire({ icon: "error", title: "Error", text: msg });
+    } finally {
+      setEnviandoResenia(false);
+    }
+  };
 
   if (loading) {
     return <div>Cargando...</div>;
@@ -447,6 +485,119 @@ const handleAddToCart = async () => {
                         <Typography className="text-center text-gray-600 text-[11px]">Ingresa tu N° pedido y conoce su estado.</Typography>
                     </div>
                 </div>
+        </div>
+
+      </div>
+
+      {/* ── RESEÑAS ── */}
+      <div className="w-full px-[10%] max-lg:px-[20px] py-10 border-t border-gray-200">
+
+        {/* Encabezado + botón */}
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <div className="flex items-center gap-4">
+            <Typography className="text-2xl font-bold font-Poppins">Reseñas</Typography>
+            {resenias.length > 0 && (
+              <div className="flex items-center gap-2">
+                <div className="flex gap-0.5">
+                  {[1, 2, 3, 4, 5].map((s) => {
+                    const promedio = resenias.reduce((a, r) => a + r.puntajeEstrellas, 0) / resenias.length;
+                    return (
+                      <Star key={s} className={`h-4 w-4 ${s <= Math.round(promedio) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} />
+                    );
+                  })}
+                </div>
+                <Typography className="text-gray-500 text-sm font-Poppins">
+                  {(resenias.reduce((a, r) => a + r.puntajeEstrellas, 0) / resenias.length).toFixed(1)} · {resenias.length} {resenias.length === 1 ? "reseña" : "reseñas"}
+                </Typography>
+              </div>
+            )}
+          </div>
+
+          {isUserLoggedIn() ? (
+            <button
+              className="border border-black font-Poppins text-sm font-semibold px-5 py-2 rounded hover:bg-black hover:text-white transition-colors"
+              onClick={() => setMostrarFormResenia((v) => !v)}
+            >
+              {mostrarFormResenia ? "Cancelar" : "Escribir reseña"}
+            </button>
+          ) : (
+            <button
+              className="border border-gray-300 text-gray-500 font-Poppins text-sm px-5 py-2 rounded hover:border-black hover:text-black transition-colors"
+              onClick={() => navigate("/login")}
+            >
+              Inicia sesión para opinar
+            </button>
+          )}
+        </div>
+
+        {/* Formulario (collapsible) */}
+        <AnimatePresence>
+          {mostrarFormResenia && (
+            <motion.div
+              key="form-resenia"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="max-w-lg mb-8 p-5 border border-gray-200 rounded">
+                <Typography className="text-sm font-semibold font-Poppins mb-3">Tu calificación</Typography>
+                <div className="flex gap-2 mb-4">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star
+                      key={s}
+                      className={`h-8 w-8 cursor-pointer transition-colors ${
+                        s <= nuevaCalificacion ? "fill-yellow-400 text-yellow-400" : "text-gray-300 hover:text-yellow-300"
+                      }`}
+                      onClick={() => setNuevaCalificacion(s)}
+                    />
+                  ))}
+                </div>
+                <textarea
+                  className="w-full border border-gray-300 rounded p-3 text-sm font-Poppins mb-4 resize-none focus:outline-none focus:border-gray-500"
+                  rows={3}
+                  placeholder="Cuéntanos tu experiencia (opcional)"
+                  value={nuevoComentario}
+                  onChange={(e) => setNuevoComentario(e.target.value)}
+                />
+                <Button
+                  className="bg-red-500 hover:bg-red-600 text-white font-Poppins font-bold px-6 py-2 rounded border-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleSubmitResenia}
+                  disabled={!nuevaCalificacion || enviandoResenia}
+                >
+                  {enviandoResenia ? "Enviando..." : "Publicar reseña"}
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Lista de reseñas */}
+        <div className="flex flex-col gap-6 max-w-2xl">
+          {resenias.length === 0 && (
+            <Typography className="text-gray-400 font-Poppins text-sm">
+              Aún no hay reseñas para esta prenda.
+            </Typography>
+          )}
+          {resenias.map((r, i) => (
+            <div key={i} className="border-b border-gray-100 pb-5">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="flex gap-0.5">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star key={s} className={`h-4 w-4 ${s <= r.puntajeEstrellas ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} />
+                  ))}
+                </div>
+                <Typography className="font-semibold text-sm font-Poppins">{r.nombreUsuario}</Typography>
+              </div>
+              {r.comentario && (
+                <Typography className="text-gray-600 text-sm font-Poppins mt-1">{r.comentario}</Typography>
+              )}
+              <Typography className="text-gray-400 text-xs font-Poppins mt-2">
+                {new Date(r.createdAt).toLocaleDateString("es-PE", { year: "numeric", month: "long", day: "numeric" })}
+              </Typography>
+            </div>
+          ))}
         </div>
 
       </div>
